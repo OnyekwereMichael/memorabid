@@ -57,48 +57,56 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted via-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       <Navbar />
       
-      <div className="flex items-center justify-center py-16 px-4">
+      <div className="flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-              <Gavel className="h-8 w-8 text-primary" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary/20 to-primary-glow/20 rounded-2xl mb-6 shadow-elegant">
+              <Gavel className="h-10 w-10 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Join AuctionPro</h1>
-            <p className="text-muted-foreground">Create your account to start bidding or selling</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              Join AuctionPro
+            </h1>
+            <p className="text-muted-foreground mt-2">Create your account to start bidding or selling</p>
           </div>
 
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Create Account</CardTitle>
-              <CardDescription>
+          <Card className="modern-card modern-card-dark shadow-elegant border-0">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-2xl">Create Account</CardTitle>
+              <CardDescription className="text-base">
                 Fill in your details to get started
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Account Type Selection */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Account Type</Label>
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Account Type</Label>
                   <RadioGroup
                     value={formData.accountType}
                     onValueChange={(value) => handleInputChange("accountType", value)}
                     className="grid grid-cols-2 gap-4"
                   >
-                    <div className="flex items-center space-x-2 border rounded-lg p-4">
+                    <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                       <RadioGroupItem value="bidder" id="bidder" />
-                      <Label htmlFor="bidder" className="flex items-center space-x-2 cursor-pointer">
-                        <User className="h-4 w-4" />
-                        <span>Bidder Only</span>
+                      <Label htmlFor="bidder" className="flex items-center space-x-3 cursor-pointer flex-1">
+                        <User className="h-5 w-5 text-primary" />
+                        <div>
+                          <span className="font-medium">Bidder Only</span>
+                          <p className="text-xs text-muted-foreground">Participate in auctions</p>
+                        </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 border rounded-lg p-4">
+                    <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                       <RadioGroupItem value="seller" id="seller" />
-                      <Label htmlFor="seller" className="flex items-center space-x-2 cursor-pointer">
-                        <Store className="h-4 w-4" />
-                        <span>Request to be Seller</span>
+                      <Label htmlFor="seller" className="flex items-center space-x-3 cursor-pointer flex-1">
+                        <Store className="h-5 w-5 text-primary" />
+                        <div>
+                          <span className="font-medium">Seller Request</span>
+                          <p className="text-xs text-muted-foreground">Sell your items</p>
+                        </div>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -107,29 +115,31 @@ const Register = () => {
                 {/* Personal Information */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="firstName" className="font-medium">First Name</Label>
                     <Input
                       id="firstName"
                       placeholder="John"
                       value={formData.firstName}
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
+                      className="bg-background/50 border-border/50"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
+                    <Label htmlFor="lastName" className="font-medium">Last Name</Label>
                     <Input
                       id="lastName"
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
+                      className="bg-background/50 border-border/50"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="font-medium">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -138,7 +148,7 @@ const Register = () => {
                       placeholder="john@example.com"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-9"
+                      className="pl-9 bg-background/50 border-border/50"
                       required
                     />
                   </div>
@@ -146,7 +156,7 @@ const Register = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="font-medium">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -155,13 +165,13 @@ const Register = () => {
                         placeholder="Create password"
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="pl-9"
+                        className="pl-9 bg-background/50 border-border/50"
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="font-medium">Confirm Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -170,7 +180,7 @@ const Register = () => {
                         placeholder="Confirm password"
                         value={formData.confirmPassword}
                         onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                        className="pl-9"
+                        className="pl-9 bg-background/50 border-border/50"
                         required
                       />
                     </div>
@@ -179,34 +189,41 @@ const Register = () => {
 
                 {/* Seller-specific fields */}
                 {formData.accountType === "seller" && (
-                  <>
+                  <div className="space-y-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Store className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">Seller Information</span>
+                    </div>
+                    
                     <div className="space-y-2">
-                      <Label htmlFor="businessName">Business Name (Optional)</Label>
+                      <Label htmlFor="businessName" className="font-medium">Business Name (Optional)</Label>
                       <Input
                         id="businessName"
                         placeholder="Your business or trading name"
                         value={formData.businessName}
                         onChange={(e) => handleInputChange("businessName", e.target.value)}
+                        className="bg-background/70 border-border/50"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="description">Tell us about yourself</Label>
+                      <Label htmlFor="description" className="font-medium">Tell us about yourself</Label>
                       <Textarea
                         id="description"
                         placeholder="Describe your experience with collectibles, what you plan to sell, etc."
                         value={formData.description}
                         onChange={(e) => handleInputChange("description", e.target.value)}
                         rows={4}
+                        className="bg-background/70 border-border/50 resize-none"
                       />
                       <p className="text-xs text-muted-foreground">
                         This helps our admin team review your seller application
                       </p>
                     </div>
-                  </>
+                  </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
                   {isLoading 
                     ? "Creating Account..." 
                     : formData.accountType === "seller"
@@ -216,14 +233,14 @@ const Register = () => {
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-8 text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
-                  <Link to="/login" className="text-primary hover:underline">
+                  <Link to="/login" className="text-primary hover:underline font-medium">
                     Sign in here
                   </Link>
                 </p>
-                <Link to="/" className="text-sm text-muted-foreground hover:text-primary">
+                <Link to="/" className="text-sm text-muted-foreground hover:text-primary inline-flex items-center justify-center">
                   ← Back to home
                 </Link>
               </div>
