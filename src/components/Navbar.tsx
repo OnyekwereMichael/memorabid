@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Gavel, User } from "lucide-react";
+import { LogOut, Gavel, User, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -11,11 +12,52 @@ interface NavbarProps {
 
 const Navbar = ({ userRole, userName }: NavbarProps) => {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     // In a real app, clear authentication state here
     navigate('/');
   };
+
+  // Nav links (for reuse)
+  const navLinks = (
+    <>
+      {userRole && userName ? (
+        <>
+          <div className="flex items-center space-x-3 px-3 py-1.5 rounded-lg bg-background/50 border border-border/50">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">{userName}</span>
+            <Badge 
+              variant={userRole === 'admin' ? 'destructive' : 'secondary'}
+              className="shadow-soft"
+            >
+              {userRole === 'admin' ? 'Admin' : 'Seller'}
+            </Badge>
+          </div>
+          <ThemeToggle />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogout}
+            className="flex items-center space-x-1 shadow-soft"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+        </>
+      ) : (
+        <>
+          <ThemeToggle />
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/login">Sign In</Link>
+          </Button>
+          <Button size="sm" asChild className="shadow-elegant">
+            <Link to="/register">Get Started</Link>
+          </Button>
+        </>
+      )}
+    </>
+  );
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b glass glass-dark shadow-elegant">
@@ -26,50 +68,38 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
               <Gavel className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              AuctionPro
+              Memorabid
             </span>
           </Link>
 
-          <div className="flex items-center space-x-4">
-            {userRole && userName && (
-              <>
-                <div className="flex items-center space-x-3 px-3 py-1.5 rounded-lg bg-background/50 border border-border/50">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{userName}</span>
-                  <Badge 
-                    variant={userRole === 'admin' ? 'destructive' : 'secondary'}
-                    className="shadow-soft"
-                  >
-                    {userRole === 'admin' ? 'Admin' : 'Seller'}
-                  </Badge>
-                </div>
-                <ThemeToggle />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="flex items-center space-x-1 shadow-soft"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </Button>
-              </>
-            )}
-            
-            {!userRole && (
-              <>
-                <ThemeToggle />
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild className="shadow-elegant">
-                  <Link to="/register">Get Started</Link>
-                </Button>
-              </>
-            )}
-          </div>
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center space-x-4">{navLinks}</div>
+
+          {/* Hamburger for mobile */}
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-7 w-7 text-primary" />
+          </button>
         </div>
       </div>
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-end md:hidden">
+          <button
+            className="p-4 focus:outline-none"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <Menu className="h-8 w-8 text-primary" />
+          </button>
+          <div className="flex flex-col bg-black/80 items-end space-y-4 px-8 py-8 w-full">
+            {navLinks}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
