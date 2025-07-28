@@ -45,14 +45,16 @@ All colors MUST be HSL.
 
     /* Modern gradients */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 90% 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(262 83% 98%), hsl(262 50% 99%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 99%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 40% 98%), hsl(220 14% 99%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 40% 99%));
+    --gradient-section: linear-gradient(135deg, hsl(210 40% 99%), hsl(220 14% 98%));
     
     /* Elegant shadows */
-    --shadow-elegant: 0 25px 50px -12px hsl(262 83% 58% / 0.25);
-    --shadow-card: 0 1px 3px hsl(220 43% 11% / 0.12), 0 1px 2px hsl(220 43% 11% / 0.24);
-    --shadow-glow: 0 0 40px hsl(262 90% 70% / 0.3);
-    --shadow-soft: 0 2px 8px hsl(220 43% 11% / 0.04);
+    --shadow-elegant: 0 25px 50px -12px hsl(262 83% 58% / 0.15);
+    --shadow-card: 0 4px 12px hsl(220 43% 11% / 0.08), 0 2px 4px hsl(220 43% 11% / 0.12);
+    --shadow-glow: 0 0 40px hsl(262 90% 70% / 0.2);
+    --shadow-soft: 0 1px 4px hsl(220 43% 11% / 0.06);
+    --shadow-feature: 0 8px 32px hsl(220 43% 11% / 0.12);
 
     --radius: 0.75rem;
 
@@ -129,7 +131,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-lake-sand antialiased;
+    @apply bg-background text-foreground font-lexend antialiased;
   }
 
   /* Glass effect utilities */

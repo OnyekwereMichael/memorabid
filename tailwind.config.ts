@@ -19,8 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'lake-sand': ['Lake Sand', 'sans-serif'],
-				'sans': ['Lake Sand', 'system-ui', 'sans-serif']
+				'lexend': ['Lexend', 'sans-serif'],
+				'sans': ['Lexend', 'system-ui', 'sans-serif']
 			},
 			colors: {
 				border: 'hsl(var(--border))',

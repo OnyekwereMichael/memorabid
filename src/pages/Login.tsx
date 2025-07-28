@@ -11,13 +11,14 @@ import Navbar from "@/components/Navbar";
 
 const Login = () => {
   const [adminData, setAdminData] = useState({ email: "", password: "" });
+  const [sellerData, setSellerData] = useState({ email: "", password: "" });
   const [userData, setUserData] = useState({ email: "", password: "" });
   const [activeTab, setActiveTab] = useState("user");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent, userType: "admin" | "user") => {
+  const handleLogin = async (e: React.FormEvent, userType: "admin" | "seller" | "user") => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -33,19 +34,27 @@ const Login = () => {
           description: "Redirecting to admin dashboard...",
         });
         navigate("/admin-dashboard");
-      } else {
+      } else if (userType === "seller") {
         toast({
-          title: "Welcome back!",
+          title: "Welcome back, Seller!",
           description: "Redirecting to seller dashboard...",
         });
         navigate("/seller-dashboard");
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "Redirecting to user dashboard...",
+        });
+        navigate("/user-dashboard");
       }
     }, 1500);
   };
 
-  const handleInputChange = (field: string, value: string, userType: "admin" | "user") => {
+  const handleInputChange = (field: string, value: string, userType: "admin" | "seller" | "user") => {
     if (userType === "admin") {
       setAdminData(prev => ({ ...prev, [field]: value }));
+    } else if (userType === "seller") {
+      setSellerData(prev => ({ ...prev, [field]: value }));
     } else {
       setUserData(prev => ({ ...prev, [field]: value }));
     }
@@ -70,27 +79,34 @@ const Login = () => {
           <Card className="modern-card modern-card-dark shadow-elegant border-0">
             <CardContent className="p-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/30 p-1">
+                <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/30 p-1">
                   <TabsTrigger 
                     value="user" 
-                    className="flex items-center space-x-2 data-[state=active]:shadow-soft"
+                    className="flex items-center space-x-2 data-[state=active]:shadow-soft text-xs"
                   >
                     <User className="h-4 w-4" />
-                    <span>User Login</span>
+                    <span>User</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="seller" 
+                    className="flex items-center space-x-2 data-[state=active]:shadow-soft text-xs"
+                  >
+                    <Gavel className="h-4 w-4" />
+                    <span>Seller</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="admin" 
-                    className="flex items-center space-x-2 data-[state=active]:shadow-soft"
+                    className="flex items-center space-x-2 data-[state=active]:shadow-soft text-xs"
                   >
                     <Shield className="h-4 w-4" />
-                    <span>Admin Login</span>
+                    <span>Admin</span>
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="user" className="space-y-6">
                   <div className="text-center mb-6">
                     <h3 className="text-lg font-semibold">User Access</h3>
-                    <p className="text-sm text-muted-foreground">Access your seller dashboard</p>
+                    <p className="text-sm text-muted-foreground">Access your user dashboard</p>
                   </div>
                   
                   <form onSubmit={(e) => handleLogin(e, "user")} className="space-y-4">
@@ -101,7 +117,7 @@ const Login = () => {
                         <Input
                           id="user-email"
                           type="email"
-                          placeholder="seller@auctionpro.com"
+                          placeholder="user@auctionpro.com"
                           value={userData.email}
                           onChange={(e) => handleInputChange("email", e.target.value, "user")}
                           className="pl-9 bg-background/50 border-border/50"
@@ -128,6 +144,51 @@ const Login = () => {
 
                     <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
                       {isLoading ? "Signing in..." : "Sign In as User"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="seller" className="space-y-6">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-semibold">Seller Access</h3>
+                    <p className="text-sm text-muted-foreground">Access your seller dashboard</p>
+                  </div>
+                  
+                  <form onSubmit={(e) => handleLogin(e, "seller")} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="seller-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="seller-email"
+                          type="email"
+                          placeholder="seller@auctionpro.com"
+                          value={sellerData.email}
+                          onChange={(e) => handleInputChange("email", e.target.value, "seller")}
+                          className="pl-9 bg-background/50 border-border/50"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="seller-password">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="seller-password"
+                          type="password"
+                          placeholder="Enter your password"
+                          value={sellerData.password}
+                          onChange={(e) => handleInputChange("password", e.target.value, "seller")}
+                          className="pl-9 bg-background/50 border-border/50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
+                      {isLoading ? "Signing in..." : "Sign In as Seller"}
                     </Button>
                   </form>
                 </TabsContent>
@@ -198,9 +259,13 @@ const Login = () => {
                     <p className="text-muted-foreground">admin@auctionpro.com</p>
                   </div>
                   <div className="text-center p-2 bg-background/50 rounded-lg">
-                    <p className="font-medium text-foreground">User</p>
+                    <p className="font-medium text-foreground">Seller</p>
                     <p className="text-muted-foreground">seller@auctionpro.com</p>
                   </div>
+                </div>
+                <div className="mt-2 text-center p-2 bg-background/50 rounded-lg">
+                  <p className="font-medium text-foreground">User</p>
+                  <p className="text-muted-foreground">user@auctionpro.com</p>
                 </div>
               </div>
             </CardContent>
