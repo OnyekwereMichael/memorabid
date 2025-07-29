@@ -131,7 +131,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-lexend antialiased;
+    @apply bg-background text-foreground font-inter antialiased;
   }
 
   /* Glass effect utilities */

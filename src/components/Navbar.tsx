@@ -87,16 +87,21 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
       </div>
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-end md:hidden">
-          <button
-            className="p-4 focus:outline-none"
-            onClick={() => setMenuOpen(false)}
-            aria-label="Close menu"
-          >
-            <Menu className="h-8 w-8 text-primary" />
-          </button>
-          <div className="flex flex-col bg-black/80 items-end space-y-4 px-8 py-8 w-full">
-            {navLinks}
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg md:hidden">
+          <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center p-4 border-b border-border">
+              <span className="text-lg font-semibold">Menu</span>
+              <button
+                className="p-2 rounded-lg hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="flex flex-col space-y-2 p-4">
+              {navLinks}
+            </div>
           </div>
         </div>
       )}

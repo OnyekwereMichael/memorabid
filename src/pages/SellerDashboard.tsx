@@ -140,20 +140,21 @@ const SellerDashboard = () => {
         </Sidebar>
 
         <main className="flex-1">
-          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <SidebarTrigger />
                 <div>
-                  <h1 className="text-2xl font-bold">Seller Dashboard</h1>
-                  <p className="text-muted-foreground">Manage your listings and track performance</p>
+                  <h1 className="text-lg sm:text-2xl font-bold">Seller Dashboard</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Manage your listings and track performance</p>
                 </div>
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 shadow-elegant">
+                  <Button className="flex items-center gap-2 shadow-elegant w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
-                    List New Item
+                    <span className="hidden sm:inline">List New Item</span>
+                    <span className="sm:hidden">List Item</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

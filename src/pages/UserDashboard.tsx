@@ -123,35 +123,35 @@ const UserDashboard = () => {
         </Sidebar>
 
         <main className="flex-1">
-          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <SidebarTrigger />
                 <div>
-                  <h1 className="text-2xl font-bold">Welcome back, John!</h1>
-                  <p className="text-muted-foreground">Manage your auctions and bids</p>
+                  <h1 className="text-lg sm:text-2xl font-bold">Welcome back, John!</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Manage your auctions and bids</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search auctions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-64"
+                    className="pl-9 w-full sm:w-64"
                   />
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="shrink-0">
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </header>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <Card className="shadow-card border-0">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Active Bids</CardTitle>
@@ -207,11 +207,11 @@ const UserDashboard = () => {
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="bids">Active Bids</TabsTrigger>
-                <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
+                <TabsTrigger value="bids" className="text-xs sm:text-sm py-2">Bids</TabsTrigger>
+                <TabsTrigger value="watchlist" className="text-xs sm:text-sm py-2">Watchlist</TabsTrigger>
+                <TabsTrigger value="history" className="text-xs sm:text-sm py-2">History</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">

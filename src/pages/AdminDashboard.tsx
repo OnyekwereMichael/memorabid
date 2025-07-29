@@ -155,20 +155,21 @@ const AdminDashboard = () => {
         </Sidebar>
 
         <main className="flex-1">
-          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <SidebarTrigger />
                 <div>
-                  <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-                  <p className="text-muted-foreground">Manage auctions, sellers, and platform operations</p>
+                  <h1 className="text-lg sm:text-2xl font-bold">Admin Dashboard</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Manage auctions, sellers, and platform operations</p>
                 </div>
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 shadow-elegant">
+                  <Button className="flex items-center gap-2 shadow-elegant w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
-                    Create Auction
+                    <span className="hidden sm:inline">Create Auction</span>
+                    <span className="sm:hidden">Create</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -244,14 +245,14 @@ const AdminDashboard = () => {
             </div>
           </header>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="auctions">Auctions</TabsTrigger>
-                <TabsTrigger value="sellers">Seller Requests</TabsTrigger>
-                <TabsTrigger value="flagged">Flagged Items</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
+                <TabsTrigger value="auctions" className="text-xs sm:text-sm py-2">Auctions</TabsTrigger>
+                <TabsTrigger value="sellers" className="text-xs sm:text-sm py-2 hidden sm:block">Sellers</TabsTrigger>
+                <TabsTrigger value="flagged" className="text-xs sm:text-sm py-2">Flagged</TabsTrigger>
+                <TabsTrigger value="analytics" className="text-xs sm:text-sm py-2">Analytics</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">

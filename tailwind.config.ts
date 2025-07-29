@@ -19,8 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'lexend': ['Lexend', 'sans-serif'],
-				'sans': ['Lexend', 'system-ui', 'sans-serif']
+				'inter': ['Inter', 'sans-serif'],
+				'sans': ['Inter', 'system-ui', 'sans-serif']
 			},
 			colors: {
 				border: 'hsl(var(--border))',
