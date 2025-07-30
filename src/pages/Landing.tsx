@@ -23,7 +23,7 @@ const Landing = () => {
                 <span className="text-xs sm:text-sm font-semibold text-primary">Exclusive Cricket Collectibles</span>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-12 max-sm:leading-tight">
+              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-12 max-sm:leading-tight">
                 Discover Cricket Legends at   ECC
                 {/* <br className="hidden sm:block" /> */}
                 {/* <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
@@ -31,7 +31,7 @@ const Landing = () => {
                 </span> */}
               </h1>
               
-              <p className="text-lg sm:text-xl md:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl lg:mx-0 mx-auto leading-relaxed">
+              <p className="text-[16px] sm:text-xl md:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl lg:mx-0 mx-auto leading-relaxed">
                 The premier destination for authenticated cricket memorabilia, vintage equipment, 
                 and exclusive collectibles. Join thousands of cricket enthusiasts in our trusted marketplace.
               </p>
@@ -82,8 +82,8 @@ const Landing = () => {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Why Choose ECC?</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-5xl font-bold mb-6">Why Choose ECC?</h2>
+            <p className="text-[16px] text-muted-foreground max-w-3xl mx-auto">
               Experience the most trusted and advanced auction platform for cricket collectibles
             </p>
           </div>
@@ -132,8 +132,8 @@ const Landing = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-muted/40 to-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">How ECC Works</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-5xl font-bold mb-6">How ECC Works</h2>
+            <p className="text-[16px] text-muted-foreground max-w-3xl mx-auto">
               Simple, secure, and transparent auction process for cricket enthusiasts
             </p>
           </div>
@@ -180,8 +180,8 @@ const Landing = () => {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Featured Auctions</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-5xl font-bold mb-6">Featured Auctions</h2>
+            <p className="text-[16px] text-muted-foreground max-w-3xl mx-auto">
               Don't miss these rare finds ending soon
             </p>
           </div>
@@ -264,8 +264,8 @@ const Landing = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-muted/40 to-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Trusted Worldwide</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-5xl font-bold mb-6">Trusted Worldwide</h2>
+            <p className="text-[16px] text-muted-foreground max-w-3xl mx-auto">
               Security and authenticity you can depend on
             </p>
           </div>
@@ -292,8 +292,8 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to Start Your Cricket Collection?</h2>
-          <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <h2 className="text-2xl md:text-5xl font-bold mb-6">Ready to Start Your Cricket Collection?</h2>
+          <p className="text-[16px] text-muted-foreground mb-12 max-w-2xl mx-auto">
             Join ECC today and discover rare cricket collectibles from trusted sellers worldwide
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
