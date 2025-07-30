@@ -202,59 +202,59 @@ const SellerDashboard = () => {
             </div>
           </header>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <Card className="shadow-card border-0">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Listings</CardTitle>
+                  <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{stats.totalListings}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">{stats.totalListings}</div>
                   <p className="text-xs text-muted-foreground">All time</p>
                 </CardContent>
               </Card>
               
               <Card className="shadow-card border-0">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Auctions</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Active Auctions</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{stats.activeAuctions}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">{stats.activeAuctions}</div>
                   <p className="text-xs text-muted-foreground">Currently live</p>
                 </CardContent>
               </Card>
               
               <Card className="shadow-card border-0">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Earnings</CardTitle>
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">${stats.totalEarnings.toLocaleString()}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">${stats.totalEarnings.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">After fees</p>
                 </CardContent>
               </Card>
               
               <Card className="shadow-card border-0">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Sale Price</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Avg Sale Price</CardTitle>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">${stats.avgSalePrice.toLocaleString()}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">${stats.avgSalePrice.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">Per item</p>
                 </CardContent>
               </Card>
               
-              <Card className="shadow-card border-0">
+              <Card className="shadow-card border-0 col-span-2 md:col-span-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Success Rate</CardTitle>
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{stats.successRate}%</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">{stats.successRate}%</div>
                   <p className="text-xs text-muted-foreground">Items sold</p>
                 </CardContent>
               </Card>
@@ -265,43 +265,45 @@ const SellerDashboard = () => {
                 <CardTitle>My Auctions</CardTitle>
                 <CardDescription>Manage your auction items</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Current Bid</TableHead>
-                      <TableHead>Start Price</TableHead>
-                      <TableHead>Time Left</TableHead>
-                      <TableHead>Watchers</TableHead>
-                      <TableHead>Bids</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {myAuctions.map((auction) => (
-                      <TableRow key={auction.id}>
-                        <TableCell className="font-medium">{auction.title}</TableCell>
-                        <TableCell>${auction.currentBid.toLocaleString()}</TableCell>
-                        <TableCell>${auction.startPrice.toLocaleString()}</TableCell>
-                        <TableCell>{auction.endTime}</TableCell>
-                        <TableCell>{auction.watchers}</TableCell>
-                        <TableCell>{auction.bids}</TableCell>
-                        <TableCell>
-                          <Badge variant={auction.status === 'active' ? 'default' : 'destructive'}>
-                            {auction.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+              <CardContent className="overflow-x-auto">
+                <div className="min-w-[700px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Item</TableHead>
+                        <TableHead className="min-w-[100px]">Current Bid</TableHead>
+                        <TableHead className="min-w-[90px]">Start Price</TableHead>
+                        <TableHead className="min-w-[80px]">Time Left</TableHead>
+                        <TableHead className="min-w-[80px]">Watchers</TableHead>
+                        <TableHead className="min-w-[60px]">Bids</TableHead>
+                        <TableHead className="min-w-[80px]">Status</TableHead>
+                        <TableHead className="min-w-[70px]">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {myAuctions.map((auction) => (
+                        <TableRow key={auction.id}>
+                          <TableCell className="font-medium">{auction.title}</TableCell>
+                          <TableCell>${auction.currentBid.toLocaleString()}</TableCell>
+                          <TableCell>${auction.startPrice.toLocaleString()}</TableCell>
+                          <TableCell>{auction.endTime}</TableCell>
+                          <TableCell>{auction.watchers}</TableCell>
+                          <TableCell>{auction.bids}</TableCell>
+                          <TableCell>
+                            <Badge variant={auction.status === 'active' ? 'default' : 'destructive'}>
+                              {auction.status === 'ending_soon' ? 'ending soon' : auction.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -88,14 +88,14 @@ const Register = () => {
           <span className="font-bold text-base">– Ada, Independent Seller</span>
         </div>
         {/* Right Panel */}
-        <div className="flex flex-col pt-8 items-center w-full md:w-[65%] max-sm:px-2 px-8 min-h-full max-sm:w-[100%]">
-          <div className="w-full">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#A259FF] mb-2">Sign Up</h2>
-              <p className="text-muted-foreground mb-6 text-md">Create your account to get started.</p>
+        <div className="flex flex-col pt-4 sm:pt-8 items-center w-full md:w-[65%] px-4 sm:px-8 min-h-full">
+          <div className="w-full max-w-md sm:max-w-none">
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#A259FF] mb-2">Sign Up</h2>
+              <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-md">Create your account to get started.</p>
             </div>
             <Card className="shadow-elegant border-0 bg-background/80">
-              <CardContent className="py-8 px-8 max-sm:px-4 max-sm:py-6">
+              <CardContent className="py-6 px-4 sm:py-8 sm:px-8">
                 <Formik
                   initialValues={initialValues}
                   validationSchema={RegisterSchema}
@@ -109,35 +109,35 @@ const Register = () => {
                         <RadioGroup
                           value={values.role}
                           onValueChange={(value) => setFieldValue("role", value)}
-                          className="grid grid-cols-3 gap-4 max-sm:grid-cols-1"
+                          className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
                         >
-                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
+                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                             <RadioGroupItem value="user" id="user" />
-                            <Label htmlFor="user" className="flex items-center space-x-3 cursor-pointer flex-1">
-                              <User className="h-5 w-5 text-primary" />
+                            <Label htmlFor="user" className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-1">
+                              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               <div>
-                                <span className="font-medium mb-1">User</span>
-                                <p className="text-xs mt-1 text-muted-foreground">Participate in auctions</p>
+                                <span className="font-medium text-sm sm:text-base">User</span>
+                                <p className="text-xs text-muted-foreground">Participate in auctions</p>
                               </div>
                             </Label>
                           </div>
-                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
+                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                             <RadioGroupItem value="seller" id="seller" />
-                            <Label htmlFor="seller" className="flex items-center space-x-3 cursor-pointer flex-1">
-                              <Store className="h-5 w-5 text-primary" />
+                            <Label htmlFor="seller" className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-1">
+                              <Store className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               <div>
-                                <span className="font-medium">Seller</span>
-                                <p className="text-xs text-muted-foreground mt-1">Create and Monitor Auctions</p>
+                                <span className="font-medium text-sm sm:text-base">Seller</span>
+                                <p className="text-xs text-muted-foreground">Create and Monitor Auctions</p>
                               </div>
                             </Label>
                           </div>
-                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
+                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                             <RadioGroupItem value="admin" id="admin" />
-                            <Label htmlFor="admin" className="flex items-center space-x-3 cursor-pointer flex-1">
-                              <Gavel className="h-5 w-5 text-primary" />
+                            <Label htmlFor="admin" className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-1">
+                              <Gavel className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                               <div>
-                                <span className="font-medium">Admin</span>
-                                <p className="text-xs text-muted-foreground mt-1">Manage Platform</p>
+                                <span className="font-medium text-sm sm:text-base">Admin</span>
+                                <p className="text-xs text-muted-foreground">Manage Platform</p>
                               </div>
                             </Label>
                           </div>
@@ -194,7 +194,7 @@ const Register = () => {
                       </div>
 
                       {/* Password Fields */}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="password" className="font-medium">Password</Label>
                           <div className="relative">

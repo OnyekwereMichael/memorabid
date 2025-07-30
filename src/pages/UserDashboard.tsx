@@ -277,22 +277,24 @@ const UserDashboard = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {activeBids.map((bid) => (
-                        <div key={bid.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                          <div>
+                        <div key={bid.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                          <div className="flex-1">
                             <h3 className="font-semibold">{bid.title}</h3>
                             <p className="text-sm text-muted-foreground">Your bid: ${bid.myBid.toLocaleString()}</p>
                           </div>
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            <div className="text-left sm:text-right">
                               <p className="font-semibold">${bid.currentBid.toLocaleString()}</p>
                               <p className="text-sm text-muted-foreground">Current bid</p>
                             </div>
-                            <Badge variant={bid.status === "winning" ? "default" : "destructive"}>
-                              {bid.status === "winning" ? "Winning" : "Outbid"}
-                            </Badge>
-                            <Button size="sm">
-                              {bid.status === "winning" ? "Increase Bid" : "Rebid"}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={bid.status === "winning" ? "default" : "destructive"}>
+                                {bid.status === "winning" ? "Winning" : "Outbid"}
+                              </Badge>
+                              <Button size="sm" className="whitespace-nowrap">
+                                {bid.status === "winning" ? "Increase Bid" : "Rebid"}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}

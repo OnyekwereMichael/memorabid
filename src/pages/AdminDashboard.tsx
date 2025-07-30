@@ -352,21 +352,22 @@ const AdminDashboard = () => {
                     <CardTitle>All Auctions</CardTitle>
                     <CardDescription>Manage all auction items on the platform</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Seller</TableHead>
-                          <TableHead>Current Bid</TableHead>
-                          <TableHead>Time Left</TableHead>
-                          <TableHead>Watchers</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activeAuctions.map((auction) => (
+                  <CardContent className="overflow-x-auto">
+                    <div className="min-w-[800px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[200px]">Title</TableHead>
+                            <TableHead className="min-w-[120px]">Seller</TableHead>
+                            <TableHead className="min-w-[100px]">Current Bid</TableHead>
+                            <TableHead className="min-w-[100px]">Time Left</TableHead>
+                            <TableHead className="min-w-[80px]">Watchers</TableHead>
+                            <TableHead className="min-w-[80px]">Status</TableHead>
+                            <TableHead className="min-w-[80px]">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {activeAuctions.map((auction) => (
                           <TableRow key={auction.id}>
                             <TableCell className="font-medium">{auction.title}</TableCell>
                             <TableCell>{auction.seller}</TableCell>
@@ -387,6 +388,7 @@ const AdminDashboard = () => {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
