@@ -58,15 +58,15 @@ const UserDashboard = () => {
   };
 
   const watchlistItems = [
-    { id: 1, title: "1952 Topps Mickey Mantle", currentBid: 45000, timeLeft: "2h 45m", image: "🏀" },
-    { id: 2, title: "Michael Jordan Jersey", currentBid: 78000, timeLeft: "1d 12h", image: "👕" },
-    { id: 3, title: "Babe Ruth Baseball", currentBid: 32000, timeLeft: "3h 21m", image: "⚾" },
+    { id: 1, title: "1983 World Cup Winning Bat", currentBid: 45000, timeLeft: "2h 45m", image: "🏏" },
+    { id: 2, title: "Sachin Tendulkar Jersey", currentBid: 78000, timeLeft: "1d 12h", image: "👕" },
+    { id: 3, title: "Vintage Cricket Ball", currentBid: 32000, timeLeft: "3h 21m", image: "🏏" },
   ];
 
   const activeBids = [
-    { id: 1, title: "Vintage Baseball Card", myBid: 1200, currentBid: 1250, status: "outbid" },
-    { id: 2, title: "Sports Memorabilia", myBid: 850, currentBid: 850, status: "winning" },
-    { id: 3, title: "Championship Ring", myBid: 2500, currentBid: 2300, status: "winning" },
+    { id: 1, title: "Vintage Cricket Card", myBid: 1200, currentBid: 1250, status: "outbid" },
+    { id: 2, title: "Cricket Memorabilia", myBid: 850, currentBid: 850, status: "winning" },
+    { id: 3, title: "Championship Trophy", myBid: 2500, currentBid: 2300, status: "winning" },
   ];
 
   return (
@@ -79,7 +79,7 @@ const UserDashboard = () => {
                 <Gavel className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold text-lg">AuctionPro</h2>
+                <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">User Dashboard</p>
               </div>
             </div>
@@ -224,9 +224,9 @@ const UserDashboard = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { action: "Placed bid", item: "Vintage Baseball Card", amount: "$1,200", time: "2 hours ago" },
-                        { action: "Won auction", item: "Sports Memorabilia", amount: "$850", time: "1 day ago" },
-                        { action: "Added to watchlist", item: "Championship Ring", amount: null, time: "2 days ago" },
+                        { action: "Placed bid", item: "Vintage Cricket Card", amount: "$1,200", time: "2 hours ago" },
+                        { action: "Won auction", item: "Cricket Memorabilia", amount: "$850", time: "1 day ago" },
+                        { action: "Added to watchlist", item: "Championship Trophy", amount: null, time: "2 days ago" },
                       ].map((activity, i) => (
                         <div key={i} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                           <div>
@@ -334,10 +334,10 @@ const UserDashboard = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {[
-                        { item: "Vintage Baseball Card", finalBid: 1200, result: "Lost", date: "2024-01-15" },
-                        { item: "Sports Memorabilia", finalBid: 850, result: "Won", date: "2024-01-14" },
-                        { item: "Championship Ring", finalBid: 2500, result: "Won", date: "2024-01-12" },
-                        { item: "Signed Basketball", finalBid: 650, result: "Lost", date: "2024-01-10" },
+                        { item: "Vintage Cricket Card", finalBid: 1200, result: "Lost", date: "2024-01-15" },
+                        { item: "Cricket Memorabilia", finalBid: 850, result: "Won", date: "2024-01-14" },
+                        { item: "Championship Trophy", finalBid: 2500, result: "Won", date: "2024-01-12" },
+                        { item: "Signed Cricket Bat", finalBid: 650, result: "Lost", date: "2024-01-10" },
                       ].map((history, i) => (
                         <div key={i} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                           <div>

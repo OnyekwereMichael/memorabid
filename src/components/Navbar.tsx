@@ -68,7 +68,7 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
               <Gavel className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Memorabid
+              ECC
             </span>
           </Link>
 

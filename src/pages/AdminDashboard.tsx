@@ -81,9 +81,9 @@ const AdminDashboard = () => {
   ];
 
   const activeAuctions = [
-    { id: 1, title: "1952 Topps Mickey Mantle PSA 9", seller: "VintageCards Pro", currentBid: 45000, endTime: "2h 15m", watchers: 87, status: "active" },
-    { id: 2, title: "Michael Jordan Rookie Card BGS 9.5", seller: "Sports Legends", currentBid: 28500, endTime: "1d 8h", watchers: 156, status: "active" },
-    { id: 3, title: "Babe Ruth Signed Baseball", seller: "Authentication Plus", currentBid: 15750, endTime: "5h 42m", watchers: 203, status: "flagged" },
+    { id: 1, title: "1983 World Cup Winning Bat", seller: "Cricket Legends", currentBid: 45000, endTime: "2h 15m", watchers: 87, status: "active" },
+    { id: 2, title: "Sachin Tendulkar Signed Jersey", seller: "Cricket Museum", currentBid: 28500, endTime: "1d 8h", watchers: 156, status: "active" },
+    { id: 3, title: "Vintage Cricket Ball Collection", seller: "Heritage Cricket", currentBid: 15750, endTime: "5h 42m", watchers: 203, status: "flagged" },
   ];
 
   const handleApproveRejection = (sellerId: number, action: 'approve' | 'reject') => {
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold text-lg">AuctionPro</h2>
+                <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">Admin Dashboard</p>
               </div>
             </div>
@@ -323,10 +323,10 @@ const AdminDashboard = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {[
-                        { action: "New auction created", item: "Vintage Baseball Card", time: "2 minutes ago", type: "auction" },
-                        { action: "Seller approved", item: "VintageCards Pro", time: "15 minutes ago", type: "approval" },
-                        { action: "High-value bid placed", item: "$45,000 on Mickey Mantle Card", time: "1 hour ago", type: "bid" },
-                        { action: "Item flagged for review", item: "Suspicious autograph", time: "2 hours ago", type: "flag" },
+                        { action: "New auction created", item: "Vintage Cricket Bat", time: "2 minutes ago", type: "auction" },
+                        { action: "Seller approved", item: "Cricket Legends", time: "15 minutes ago", type: "approval" },
+                        { action: "High-value bid placed", item: "$45,000 on World Cup Bat", time: "1 hour ago", type: "bid" },
+                        { action: "Item flagged for review", item: "Suspicious signature", time: "2 hours ago", type: "flag" },
                       ].map((activity, i) => (
                         <div key={i} className="flex items-center space-x-4">
                           <div className={`w-2 h-2 rounded-full ${

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Gavel, Shield, TrendingUp, Users, Award, Clock, Star, CheckCircle, Trophy, Globe, Zap, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import heroImage from "@/assets/cricket-hero.jpg";
 
 const Landing = () => {
   return (
@@ -11,28 +12,45 @@ const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative py-12 sm:py-16 md:py-24 px-4 text-center overflow-hidden">
+      <section className="relative py-12 sm:py-16 md:py-24 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-60"></div>
-        <div className="relative max-w-6xl mx-auto">
-          <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary/20 to-primary-glow/20 backdrop-blur-sm border border-primary/20 rounded-full mb-6 sm:mb-8 shadow-glow">
-            <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary mr-2 sm:mr-3" />
-            <span className="text-xs sm:text-sm font-semibold text-primary">Premium Memorabilia Auctions</span>
+        <div className="relative max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+            {/* Content */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary/20 to-primary-glow/20 backdrop-blur-sm border border-primary/20 rounded-full mb-6 sm:mb-8 shadow-glow">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary mr-2 sm:mr-3" />
+                <span className="text-xs sm:text-sm font-semibold text-primary">Exclusive Cricket Collectibles</span>
+              </div>
+              
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-tight">
+                Discover Cricket Legends at
+                <br className="hidden sm:block" />
+                <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                  ECC
+                </span>
+              </h1>
+              
+              <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl lg:mx-0 mx-auto leading-relaxed">
+                The premier destination for authenticated cricket memorabilia, vintage equipment, 
+                and exclusive collectibles. Join thousands of cricket enthusiasts in our trusted marketplace.
+              </p>
+            </div>
+            
+            {/* Hero Image */}
+            <div className="flex-1 w-full lg:w-auto">
+              <div className="relative rounded-2xl overflow-hidden shadow-feature">
+                <img 
+                  src={heroImage} 
+                  alt="Cricket memorabilia auction items" 
+                  className="w-full h-64 sm:h-80 lg:h-96 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+            </div>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-tight px-4 sm:px-0">
-            Discover Rare Collectibles at
-            <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              AuctionPro
-            </span>
-          </h1>
-          
-          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 sm:mb-12 max-w-xs sm:max-w-2xl md:max-w-3xl mx-auto leading-relaxed px-4 sm:px-0">
-            The premier destination for authenticated sports memorabilia, vintage collectibles, 
-            and exclusive items. Join thousands of collectors in our trusted marketplace.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-12 sm:mb-20 px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center lg:justify-start mb-12 sm:mb-20">
             <Button asChild size="lg" className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-elegant hover:shadow-glow transition-all duration-300 w-full sm:w-auto">
               <Link to="/login">Start Bidding</Link>
             </Button>
@@ -40,16 +58,18 @@ const Landing = () => {
               <Link to="/register">Become a Seller</Link>
             </Button>
           </div>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto px-4 sm:px-0">
+        {/* Stats */}
+        <div className="mt-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
             {[
-              { label: "Active Auctions", value: "2,500+" },
-              { label: "Verified Sellers", value: "1,200+" },
-              { label: "Total Sales", value: "$15M+" },
-              { label: "Happy Collectors", value: "50K+" }
+              { label: "Active Auctions", value: "1,800+" },
+              { label: "Verified Sellers", value: "650+" },
+              { label: "Total Sales", value: "$8M+" },
+              { label: "Cricket Fans", value: "25K+" }
             ].map((stat, i) => (
-              <div key={i} className="text-center p-2">
+              <div key={i} className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-soft">
                 <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-1 sm:mb-2">{stat.value}</div>
                 <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
               </div>
@@ -62,9 +82,9 @@ const Landing = () => {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Choose AuctionPro?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Choose ECC?</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Experience the most trusted and advanced auction platform for collectibles
+              Experience the most trusted and advanced auction platform for cricket collectibles
             </p>
           </div>
           
@@ -112,9 +132,9 @@ const Landing = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-muted/40 to-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">How AuctionPro Works</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">How ECC Works</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Simple, secure, and transparent auction process
+              Simple, secure, and transparent auction process for cricket enthusiasts
             </p>
           </div>
 
@@ -169,24 +189,24 @@ const Landing = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                title: "1952 Topps Mickey Mantle PSA 9",
-                category: "Baseball Cards",
+                title: "1983 World Cup Winning Bat",
+                category: "Cricket Bats",
                 currentBid: 45000,
                 timeLeft: "2h 45m",
                 watchers: 234,
                 featured: true
               },
               {
-                title: "Michael Jordan Game-Worn Jersey",
-                category: "Basketball Memorabilia", 
+                title: "Sachin Tendulkar Signed Jersey",
+                category: "Cricket Memorabilia", 
                 currentBid: 78000,
                 timeLeft: "1d 12h",
                 watchers: 156,
                 featured: false
               },
               {
-                title: "Babe Ruth Signed Baseball",
-                category: "Baseball Memorabilia",
+                title: "Vintage Cricket Ball Collection",
+                category: "Cricket Equipment",
                 currentBid: 32000,
                 timeLeft: "3h 21m", 
                 watchers: 89,
@@ -272,9 +292,9 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Start Your Collection?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Start Your Cricket Collection?</h2>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Join AuctionPro today and discover rare collectibles from trusted sellers worldwide
+            Join ECC today and discover rare cricket collectibles from trusted sellers worldwide
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button asChild size="lg" className="text-lg px-10 py-7 shadow-elegant">
@@ -294,10 +314,10 @@ const Landing = () => {
             <div>
               <h3 className="font-semibold text-lg mb-4 flex items-center">
                 <Gavel className="h-5 w-5 text-primary mr-2" />
-                AuctionPro
+                ECC
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                The world's premier destination for authenticated collectibles and memorabilia auctions.
+                The world's premier destination for authenticated cricket collectibles and memorabilia auctions.
               </p>
             </div>
             <div>
@@ -330,7 +350,7 @@ const Landing = () => {
           </div>
           <div className="border-t pt-8 text-center">
             <p className="text-muted-foreground">
-              © 2024 AuctionPro. All rights reserved. | Secure • Trusted • Authentic
+              © 2024 ECC - Exclusive Club Cricket. All rights reserved. | Secure • Trusted • Authentic
             </p>
           </div>
         </div>

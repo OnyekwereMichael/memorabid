@@ -73,9 +73,9 @@ const SellerDashboard = () => {
   };
 
   const myAuctions = [
-    { id: 1, title: "1985 Jordan Rookie Card PSA 10", currentBid: 8500, startPrice: 5000, endTime: "2d 14h", watchers: 45, status: "active", bids: 23 },
-    { id: 2, title: "Vintage Yankees World Series Ring", currentBid: 12750, startPrice: 8000, endTime: "1d 3h", watchers: 67, status: "active", bids: 31 },
-    { id: 3, title: "Mickey Mantle Signed Photo", currentBid: 3250, startPrice: 2000, endTime: "6h 22m", watchers: 89, status: "ending_soon", bids: 18 },
+    { id: 1, title: "1983 World Cup Cricket Bat", currentBid: 8500, startPrice: 5000, endTime: "2d 14h", watchers: 45, status: "active", bids: 23 },
+    { id: 2, title: "Vintage Cricket Championship Trophy", currentBid: 12750, startPrice: 8000, endTime: "1d 3h", watchers: 67, status: "active", bids: 31 },
+    { id: 3, title: "MS Dhoni Signed Gloves", currentBid: 3250, startPrice: 2000, endTime: "6h 22m", watchers: 89, status: "ending_soon", bids: 18 },
   ];
 
   const handleCreateListing = (e: React.FormEvent) => {
@@ -96,7 +96,7 @@ const SellerDashboard = () => {
                 <Gavel className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold text-lg">AuctionPro</h2>
+                <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">Seller Dashboard</p>
               </div>
             </div>
