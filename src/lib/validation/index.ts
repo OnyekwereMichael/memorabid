@@ -22,4 +22,9 @@ export const RegisterSchema = Yup.object().shape({
       .matches(/^\+?[\d\s\-\(\)]+$/, "Invalid phone number format")
       .required("Phone number is required"),
   });
+
+export const LoginSchema = Yup.object().shape({
+  email: Yup.string().email('Invalid email address').required('Email is required'),
+  password: Yup.string().required('Password is required'),
+});
   
