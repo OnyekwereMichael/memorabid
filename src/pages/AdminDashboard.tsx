@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,11 +42,41 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { authAPI, adminAPI, CreateAuctionData } from "@/lib/api";
+import { getCookie, removeCookie } from "@/lib/utils";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [userName, setUserName] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [auctionFormData, setAuctionFormData] = useState<CreateAuctionData>({
+    description: "",
+    auction_start_time: "",
+    auction_end_time: "",
+    starting_bid: 0,
+    reserve_price: 0,
+    bid_increment: 1,
+    auto_extend: false,
+    featured: false,
+    promotional_tags: ["", "", ""],
+    images: [],
+  });
+  const [isCreatingAuction, setIsCreatingAuction] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = getCookie('token');
+      if (!token) return;
+      const response = await authAPI.getMe(token);
+      if (response.success && response.data && response.data.name) {
+        setUserName(response.data.name);
+      }
+      setLoadingUser(false);
+    };
+    fetchUser();
+  }, []);
 
   const sidebarItems = [
     { title: "Dashboard", url: "/admin-dashboard", icon: Home },
@@ -57,12 +87,23 @@ const AdminDashboard = () => {
     { title: "Settings", url: "/admin-dashboard/settings", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your admin account.",
-    });
-    navigate("/");
+  const handleLogout = async () => {
+    const token = getCookie('token');
+    const response = await authAPI.logout(token || undefined);
+    if (response.success) {
+      toast({
+        title: "Logged out successfully",
+        description: response.message || "You have been logged out of your admin account.",
+      });
+      removeCookie('token');
+      navigate("/");
+    } else {
+      toast({
+        title: "Logout Failed",
+        description: response.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Mock data
@@ -93,12 +134,66 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleCreateAuction = (e: React.FormEvent) => {
+  const handleCreateAuction = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Auction Created",
-      description: "New auction has been created successfully.",
-    });
+    setIsCreatingAuction(true);
+    
+    try {
+      const token = getCookie('token');
+      const response = await adminAPI.createAuction(auctionFormData, token || undefined);
+      
+      if (response.success) {
+        toast({
+          title: "Auction Created Successfully!",
+          description: response.message || "New auction has been created successfully.",
+        });
+        // Reset form
+        setAuctionFormData({
+          description: "",
+          auction_start_time: "",
+          auction_end_time: "",
+          starting_bid: 0,
+          reserve_price: 0,
+          bid_increment: 1,
+          auto_extend: false,
+          featured: false,
+          promotional_tags: ["", "", ""],
+          images: [],
+        });
+      } else {
+        toast({
+          title: "Auction Creation Failed",
+          description: response.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Auction creation error:", error);
+      toast({
+        title: "Auction Creation Failed",
+        description: "Network error. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingAuction(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof CreateAuctionData, value: any) => {
+    setAuctionFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePromotionalTagChange = (index: number, value: string) => {
+    const newTags = [...auctionFormData.promotional_tags];
+    newTags[index] = value;
+    setAuctionFormData(prev => ({ ...prev, promotional_tags: newTags }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setAuctionFormData(prev => ({ ...prev, images: filesArray }));
+    }
   };
 
   return (
@@ -113,6 +208,7 @@ const AdminDashboard = () => {
               <div>
                 <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">Admin Dashboard</p>
+               
               </div>
             </div>
           </SidebarHeader>
@@ -160,10 +256,11 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <SidebarTrigger />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold">Admin Dashboard</h1>
+                <h1 className="text-lg sm:text-2xl font-bold">{loadingUser ? 'Loading...' : userName ? `Welcome, ${userName}` : ''}</h1>
                   <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Manage auctions, sellers, and platform operations</p>
                 </div>
               </div>
+              
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2 shadow-elegant w-full sm:w-auto">
@@ -180,71 +277,149 @@ const AdminDashboard = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleCreateAuction} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input id="title" placeholder="1952 Topps Mickey Mantle..." required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Input id="category" placeholder="Sports Cards" required />
-                      </div>
-                    </div>
-                    
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
-                      <Textarea id="description" placeholder="Detailed description of the item..." rows={4} required />
+                      <Textarea 
+                        id="description" 
+                        placeholder="Detailed description of the auction item..." 
+                        rows={4} 
+                        value={auctionFormData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="auction_start_time">Auction Start Time</Label>
+                        <Input 
+                          id="auction_start_time" 
+                          type="datetime-local" 
+                          value={auctionFormData.auction_start_time}
+                          onChange={(e) => handleInputChange('auction_start_time', e.target.value)}
+                          required 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="auction_end_time">Auction End Time</Label>
+                        <Input 
+                          id="auction_end_time" 
+                          type="datetime-local" 
+                          value={auctionFormData.auction_end_time}
+                          onChange={(e) => handleInputChange('auction_end_time', e.target.value)}
+                          required 
+                        />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="startPrice">Starting Price ($)</Label>
-                        <Input id="startPrice" type="number" placeholder="1000" required />
+                        <Label htmlFor="starting_bid">Starting Bid ($)</Label>
+                        <Input 
+                          id="starting_bid" 
+                          type="number" 
+                          placeholder="1000" 
+                          value={auctionFormData.starting_bid}
+                          onChange={(e) => handleInputChange('starting_bid', parseFloat(e.target.value) || 0)}
+                          required 
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="reservePrice">Reserve Price ($)</Label>
-                        <Input id="reservePrice" type="number" placeholder="5000" />
+                        <Label htmlFor="reserve_price">Reserve Price ($)</Label>
+                        <Input 
+                          id="reserve_price" 
+                          type="number" 
+                          placeholder="5000" 
+                          value={auctionFormData.reserve_price}
+                          onChange={(e) => handleInputChange('reserve_price', parseFloat(e.target.value) || 0)}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="buyNow">Buy Now Price ($)</Label>
-                        <Input id="buyNow" type="number" placeholder="10000" />
+                        <Label htmlFor="bid_increment">Bid Increment ($)</Label>
+                        <Input 
+                          id="bid_increment" 
+                          type="number" 
+                          placeholder="100" 
+                          value={auctionFormData.bid_increment}
+                          onChange={(e) => handleInputChange('bid_increment', parseFloat(e.target.value) || 1)}
+                          required 
+                        />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="startTime">Start Time</Label>
-                        <Input id="startTime" type="datetime-local" required />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="auto_extend"
+                          checked={auctionFormData.auto_extend}
+                          onChange={(e) => handleInputChange('auto_extend', e.target.checked)}
+                          className="rounded"
+                        />
+                        <Label htmlFor="auto_extend">Auto Extend</Label>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endTime">End Time</Label>
-                        <Input id="endTime" type="datetime-local" required />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="featured"
+                          checked={auctionFormData.featured}
+                          onChange={(e) => handleInputChange('featured', e.target.checked)}
+                          className="rounded"
+                        />
+                        <Label htmlFor="featured">Featured Auction</Label>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Upload Images/Videos</Label>
+                      <Label>Promotional Tags</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Input 
+                          placeholder="Tag 1" 
+                          value={auctionFormData.promotional_tags[0]}
+                          onChange={(e) => handlePromotionalTagChange(0, e.target.value)}
+                        />
+                        <Input 
+                          placeholder="Tag 2" 
+                          value={auctionFormData.promotional_tags[1]}
+                          onChange={(e) => handlePromotionalTagChange(1, e.target.value)}
+                        />
+                        <Input 
+                          placeholder="Tag 3" 
+                          value={auctionFormData.promotional_tags[2]}
+                          onChange={(e) => handlePromotionalTagChange(2, e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Upload Images (Max 4)</Label>
                       <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                         <FileImage className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
+                        <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
+                        <Input 
+                          type="file" 
+                          multiple 
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="max-w-xs mx-auto"
+                        />
+                        {auctionFormData.images.length > 0 && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {auctionFormData.images.length} image(s) selected
+                          </p>
+                        )}
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label>Authentication Certificate</Label>
-                      <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Upload certificate file</p>
-                      </div>
-                    </div>
-                    
-                    <Button type="submit" className="w-full">Create Auction</Button>
+                    <Button type="submit" className="w-full" disabled={isCreatingAuction}>
+                      {isCreatingAuction ? "Creating Auction..." : "Create Auction"}
+                    </Button>
                   </form>
                 </DialogContent>
               </Dialog>
             </div>
           </header>
-
+       
           <div className="p-4 sm:p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">

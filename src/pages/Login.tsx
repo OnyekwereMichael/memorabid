@@ -8,44 +8,65 @@ import { Gavel, Mail, Lock, Shield, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import { LoginSchema } from "@/lib/validation";
+import { authAPI } from "@/lib/api";
+import { setCookie } from "@/lib/utils";
 
 const Login = () => {
-  const [adminData, setAdminData] = useState({ email: "", password: "" });
-  const [sellerData, setSellerData] = useState({ email: "", password: "" });
-  const [userData, setUserData] = useState({ email: "", password: "" });
   const [activeTab, setActiveTab] = useState("user");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent, userType: "admin" | "seller" | "user") => {
-    e.preventDefault();
+  const handleSubmit = async (values: { email: string; password: string }, { setSubmitting, setFieldError }: any, userType: "admin" | "seller" | "user") => {
     setIsLoading(true);
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      if (userType === "admin") {
-        toast({ title: "Welcome back, Admin!", description: "Redirecting to admin dashboard..." });
-        navigate("/admin-dashboard");
-      } else if (userType === "seller") {
-        toast({ title: "Welcome back, Seller!", description: "Redirecting to seller dashboard..." });
-        navigate("/seller-dashboard");
+    setSubmitting(true);
+    try {
+      const response = await authAPI.login({ ...values, role: userType });
+      if (response.success) {
+        toast({
+          title: "Login Successful!",
+          description: response.message || "You have logged in successfully.",
+        });
+        if (response.token) {
+          setCookie('token', response.token);
+        }
+        if (response.data) {
+          setCookie('userData', JSON.stringify(response.data));
+        }
+        if (userType === "admin") {
+          navigate("/admin-dashboard");
+        } else if (userType === "seller") {
+          navigate("/seller-dashboard");
+        } else {
+          navigate("/user-dashboard");
+        }
       } else {
-        toast({ title: "Welcome back!", description: "Redirecting to user dashboard..." });
-        navigate("/user-dashboard");
+        if (response.errors) {
+          Object.keys(response.errors).forEach((field) => {
+            setFieldError(field, response.errors![field][0]);
+          });
+        }
+        toast({
+          title: "Login Failed",
+          description: response.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
-    }, 1500);
-  };
-
-  const handleInputChange = (field: string, value: string, userType: "admin" | "seller" | "user") => {
-    if (userType === "admin") {
-      setAdminData(prev => ({ ...prev, [field]: value }));
-    } else if (userType === "seller") {
-      setSellerData(prev => ({ ...prev, [field]: value }));
-    } else {
-      setUserData(prev => ({ ...prev, [field]: value }));
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: "Network error. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setSubmitting(false);
     }
   };
+
+  const initialValues = { email: "", password: "" };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
@@ -91,79 +112,109 @@ const Login = () => {
                 </TabsList>
                   {/* User Tab */}
                 <TabsContent value="user" className="space-y-6">
-                    <form onSubmit={(e) => handleLogin(e, "user") } className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="user-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="user-email" type="email" placeholder="user@auctionpro.com" value={userData.email} onChange={(e) => handleInputChange("email", e.target.value, "user")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="user-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="user-password" type="password" placeholder="Enter your password" value={userData.password} onChange={(e) => handleInputChange("password", e.target.value, "user")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
-                    </div>
-                    <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
-                        {isLoading ? "Signing in..." : "Log In"}
-                    </Button>
-                  </form>
-                </TabsContent>
+  <Formik
+    initialValues={initialValues}
+    validationSchema={LoginSchema}
+    onSubmit={(values, actions) => handleSubmit(values, actions, "user")}
+  >
+    {({ isSubmitting }) => (
+      <Form className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="user-email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="user-email" name="email" type="email" placeholder="user@auctionpro.com" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="user-password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="user-password" name="password" type="password" placeholder="Enter your password" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
+        </div>
+        <Button type="submit" className="w-full shadow-elegant" disabled={isLoading || isSubmitting}>
+          {isLoading || isSubmitting ? "Signing in..." : "Log In"}
+        </Button>
+      </Form>
+    )}
+  </Formik>
+</TabsContent>
                   {/* Seller Tab */}
                 <TabsContent value="seller" className="space-y-6">
-                    <form onSubmit={(e) => handleLogin(e, "seller") } className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="seller-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="seller-email" type="email" placeholder="seller@auctionpro.com" value={sellerData.email} onChange={(e) => handleInputChange("email", e.target.value, "seller")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seller-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="seller-password" type="password" placeholder="Enter your password" value={sellerData.password} onChange={(e) => handleInputChange("password", e.target.value, "seller")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
-                    </div>
-                    <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
-                        {isLoading ? "Signing in..." : "Log In"}
-                    </Button>
-                  </form>
-                </TabsContent>
+  <Formik
+    initialValues={initialValues}
+    validationSchema={LoginSchema}
+    onSubmit={(values, actions) => handleSubmit(values, actions, "seller")}
+  >
+    {({ isSubmitting }) => (
+      <Form className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="seller-email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="seller-email" name="email" type="email" placeholder="seller@auctionpro.com" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="seller-password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="seller-password" name="password" type="password" placeholder="Enter your password" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
+        </div>
+        <Button type="submit" className="w-full shadow-elegant" disabled={isLoading || isSubmitting}>
+          {isLoading || isSubmitting ? "Signing in..." : "Log In"}
+        </Button>
+      </Form>
+    )}
+  </Formik>
+</TabsContent>
                   {/* Admin Tab */}
                 <TabsContent value="admin" className="space-y-6">
-                    <form onSubmit={(e) => handleLogin(e, "admin") } className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="admin-email" type="email" placeholder="admin@auctionpro.com" value={adminData.email} onChange={(e) => handleInputChange("email", e.target.value, "admin")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input id="admin-password" type="password" placeholder="Enter admin password" value={adminData.password} onChange={(e) => handleInputChange("password", e.target.value, "admin")} className="pl-9 bg-background/50 border-border/50" required />
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
-                    </div>
-                    <Button type="submit" className="w-full shadow-elegant" disabled={isLoading}>
-                        {isLoading ? "Signing in..." : "Log In"}
-                    </Button>
-                  </form>
-                </TabsContent>
+  <Formik
+    initialValues={initialValues}
+    validationSchema={LoginSchema}
+    onSubmit={(values, actions) => handleSubmit(values, actions, "admin")}
+  >
+    {({ isSubmitting }) => (
+      <Form className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="admin-email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="admin-email" name="email" type="email" placeholder="admin@auctionpro.com" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="admin-password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Field as={Input} id="admin-password" name="password" type="password" placeholder="Enter admin password" className="pl-9 bg-background/50 border-border/50" />
+            <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <Link to="#" className="text-xs text-[#A259FF] hover:underline">Forgot Password?</Link>
+        </div>
+        <Button type="submit" className="w-full shadow-elegant" disabled={isLoading || isSubmitting}>
+          {isLoading || isSubmitting ? "Signing in..." : "Log In"}
+        </Button>
+      </Form>
+    )}
+  </Formik>
+</TabsContent>
               </Tabs>
               <div className="mt-8 text-center space-y-3">
                 <p className="text-sm text-muted-foreground">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +34,28 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { authAPI } from "@/lib/api";
+import { getCookie, removeCookie } from "@/lib/utils";
 
 const UserDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [userName, setUserName] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = getCookie('token');
+      if (!token) return;
+      const response = await authAPI.getMe(token);
+      if (response.success && response.data && response.data.name) {
+        setUserName(response.data.name);
+      }
+      setLoadingUser(false);
+    };
+    fetchUser();
+  }, []);
 
   const sidebarItems = [
     { title: "Dashboard", url: "/user-dashboard", icon: Home },
@@ -49,12 +66,23 @@ const UserDashboard = () => {
     { title: "Settings", url: "/user-dashboard/settings", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account.",
-    });
-    navigate("/");
+  const handleLogout = async () => {
+    const token = getCookie('token');
+    const response = await authAPI.logout(token || undefined);
+    if (response.success) {
+      toast({
+        title: "Logged out successfully",
+        description: response.message || "You have been logged out of your account.",
+      });
+      removeCookie('token');
+      navigate("/");
+    } else {
+      toast({
+        title: "Logout Failed",
+        description: response.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const watchlistItems = [
@@ -81,6 +109,7 @@ const UserDashboard = () => {
               <div>
                 <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">User Dashboard</p>
+
               </div>
             </div>
           </SidebarHeader>
@@ -128,7 +157,7 @@ const UserDashboard = () => {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <SidebarTrigger />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold">Welcome back, John!</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold">{loadingUser ? 'Loading...' : userName ? `Welcome, ${userName}` : ''}</h1>
                   <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Manage your auctions and bids</p>
                 </div>
               </div>

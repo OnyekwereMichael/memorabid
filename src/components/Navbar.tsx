@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Gavel, User, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { authAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { getCookie, removeCookie } from "@/lib/utils";
 
 interface NavbarProps {
   userRole?: 'admin' | 'seller' | null;
@@ -13,10 +16,25 @@ interface NavbarProps {
 const Navbar = ({ userRole, userName }: NavbarProps) => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    // In a real app, clear authentication state here
-    navigate('/');
+  const handleLogout = async () => {
+    const token = getCookie('token');
+    const response = await authAPI.logout(token || undefined);
+    if (response.success) {
+      toast({
+        title: "Logged out successfully",
+        description: response.message || "You have been logged out.",
+      });
+      removeCookie('token');
+      navigate('/');
+    } else {
+      toast({
+        title: "Logout Failed",
+        description: response.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Nav links (for reuse)

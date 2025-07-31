@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,11 +40,28 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { authAPI } from "@/lib/api";
+import { getCookie, removeCookie } from "@/lib/utils";
 
 const SellerDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [userName, setUserName] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = getCookie('token');
+      if (!token) return;
+      const response = await authAPI.getMe(token);
+      if (response.success && response.data && response.data.name) {
+        setUserName(response.data.name);
+      }
+      setLoadingUser(false);
+    };
+    fetchUser();
+  }, []);
 
   const sidebarItems = [
     { title: "Dashboard", url: "/seller-dashboard", icon: Home },
@@ -55,12 +72,23 @@ const SellerDashboard = () => {
     { title: "Settings", url: "/seller-dashboard/settings", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your seller account.",
-    });
-    navigate("/");
+  const handleLogout = async () => {
+    const token = getCookie('token');
+    const response = await authAPI.logout(token || undefined);
+    if (response.success) {
+      toast({
+        title: "Logged out successfully",
+        description: response.message || "You have been logged out of your seller account.",
+      });
+      removeCookie('token');
+      navigate("/");
+    } else {
+      toast({
+        title: "Logout Failed",
+        description: response.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Mock data
@@ -98,6 +126,9 @@ const SellerDashboard = () => {
               <div>
                 <h2 className="font-semibold text-lg">ECC</h2>
                 <p className="text-sm text-muted-foreground">Seller Dashboard</p>
+                <p className="text-base font-bold mt-1">
+                  {loadingUser ? 'Loading...' : userName ? `Welcome, ${userName}` : ''}
+                </p>
               </div>
             </div>
           </SidebarHeader>

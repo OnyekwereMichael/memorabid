@@ -32,10 +32,25 @@ const Register = () => {
   const handleSubmit = async (values: RegisterData, { setSubmitting, setFieldError }: any) => {
     setIsLoading(true);
     setSubmitting(true);
-
     try {
-      const response = await authAPI.register(values);
+      // Check if email is available for the selected role
+      // const emailCheck = await authAPI.checkEmailAvailability(values.email, values.role);
+      // if (!emailCheck.success) {
+      //   toast({
+      //     title: "Email Check Failed",
+      //     description: emailCheck.message || "Failed to verify email availability.",
+      //     variant: "destructive",
+      //   });
+      //   return;
+      // }
+      
+      // if (!emailCheck.available) {
+      //   setFieldError('email', `This email is already registered as a ${values.role === 'admin' ? 'different role' : values.role}. Please use a different email or try logging in.`);
+      //   return;
+      // }
 
+      // Always send the selected role
+      const response = await authAPI.register({ ...values, role: values.role });
       if (response.success) {
         toast({
           title: "Registration Successful!",
@@ -43,7 +58,6 @@ const Register = () => {
         });
         navigate("/login");
       } else {
-        // Handle validation errors from the API
         if (response.errors) {
           Object.keys(response.errors).forEach((field) => {
             setFieldError(field, response.errors![field][0]);

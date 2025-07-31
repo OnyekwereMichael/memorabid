@@ -23,13 +23,10 @@ const Landing = () => {
                 <span className="text-xs sm:text-sm font-semibold text-primary">Exclusive Cricket Collectibles</span>
               </div>
               
-              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-12 max-sm:leading-tight">
-                Discover Cricket Legends at   ECC
-                {/* <br className="hidden sm:block" /> */}
-                {/* <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                  ECC
-                </span> */}
-              </h1>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-snug sm:leading-tight tracking-wide sm:tracking-wider text-center">
+  Discover&nbsp;Cricket&nbsp;Legends&nbsp;at&nbsp;<span className="whitespace-nowrap">ECC</span>
+</h1>
+
               
               <p className="text-[16px] sm:text-xl md:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl lg:mx-0 mx-auto leading-relaxed">
                 The premier destination for authenticated cricket memorabilia, vintage equipment, 
