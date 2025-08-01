@@ -601,51 +601,154 @@ const AdminDashboard = () => {
                     <CardTitle>All Auctions</CardTitle>
                     <CardDescription>Manage all auction items on the platform</CardDescription>
                   </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <div className="min-w-[800px]">
-                      <Table>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-[800px]">
                         <TableHeader>
-                          <TableRow>
-                            <TableHead className="min-w-[200px]">Title</TableHead>
-                            <TableHead className="min-w-[200px]">Description</TableHead>
-                            <TableHead className="min-w-[120px]">Created By</TableHead>
-                            <TableHead className="min-w-[100px]">Start</TableHead>
-                            <TableHead className="min-w-[100px]">End</TableHead>
-                            {/* <TableHead className="min-w-[80px]">Watchers</TableHead> */}
-                            <TableHead className="min-w-[80px]">Starting Bid</TableHead>
-                            <TableHead className="min-w-[80px]">Stage</TableHead>
-                            <TableHead className="min-w-[80px]">Actions</TableHead>
+                          <TableRow className="bg-muted/20 border-b">
+                            <TableHead className="min-w-[300px] px-6 py-4 font-semibold">Item Details</TableHead>
+                            <TableHead className="min-w-[120px] px-4 py-4 font-semibold">Created By</TableHead>
+                            <TableHead className="min-w-[120px] px-4 py-4 font-semibold">Starting Bid</TableHead>
+                            <TableHead className="min-w-[100px] px-4 py-4 font-semibold">Start</TableHead>
+                            <TableHead className="min-w-[100px] px-4 py-4 font-semibold">End</TableHead>
+                            <TableHead className="min-w-[100px] px-4 py-4 font-semibold text-center">Stage</TableHead>
+                            <TableHead className="min-w-[120px] px-6 py-4 font-semibold text-center">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {auctions.map((auction) => (
-                            <TableRow key={auction.id}>
-                                <div className="flex items-center space-x-2">
-  <img
-    src={auction.media?.[0]?.media_url}
-    alt={auction.title}
-    className="w-10 h-10 rounded mr-2 object-cover"
-  />
-  <TableCell className="font-medium">{auction.title}</TableCell>
-</div>
-
-                              <TableCell>{auction.description || 'N/A'}</TableCell>
-                              <TableCell>{auction.user.name || 'N/A'}</TableCell>
-                              <TableCell>{formatAuctionTime(auction.auction_start_time)}</TableCell>
-                              <TableCell>{formatAuctionTime(auction.auction_end_time)}</TableCell>
-                              <TableCell>{auction.starting_bid}</TableCell>
-                              <Badge>
-                              <TableCell>{auction.stage}</TableCell>
-                              </Badge>
-                               
-                            
-                              <TableCell>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
+                          {loadingAuctions ? (
+                            Array.from({ length: 3 }).map((_, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-muted rounded-lg animate-pulse"></div>
+                                    <div className="space-y-2 flex-1">
+                                      <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
+                                      <div className="h-3 bg-muted rounded animate-pulse w-1/2"></div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="h-4 bg-muted rounded animate-pulse w-16"></div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 text-center">
+                                  <div className="h-6 bg-muted rounded-full animate-pulse w-20 mx-auto"></div>
+                                </TableCell>
+                                <TableCell className="px-6 py-4 text-center">
+                                  <div className="h-8 bg-muted rounded animate-pulse w-16 mx-auto"></div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : auctions.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-12">
+                                <div className="flex flex-col items-center gap-4">
+                                  <Gavel className="h-12 w-12 text-muted-foreground" />
+                                  <div>
+                                    <h3 className="font-medium mb-1">No auctions found</h3>
+                                    <p className="text-sm text-muted-foreground">Create your first auction to get started</p>
+                                  </div>
+                                </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ) : (
+                            auctions.map((auction, index) => (
+                              <TableRow 
+                                key={auction.id} 
+                                className={`hover:bg-muted/30 transition-colors border-b ${
+                                  index % 2 === 0 ? 'bg-background' : 'bg-muted/10'
+                                }`}
+                              >
+                                <TableCell className="px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                    {auction.media_url ? (
+                                      <img 
+                                        src={auction.media_url} 
+                                        alt={auction.name}
+                                        className="w-12 h-12 object-cover rounded-lg border shadow-sm"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center border">
+                                        <FileImage className="h-6 w-6 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-foreground truncate">{auction.name}</p>
+                                      <p className="text-sm text-muted-foreground truncate max-w-xs">
+                                        {auction.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <span className="text-sm font-medium">{auction.seller || 'Admin'}</span>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <span className="font-semibold text-foreground">
+                                    ${auction.starting_bid.toLocaleString()}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="text-sm">
+                                    <div className="font-medium">
+                                      {new Date(auction.auction_start_time).toLocaleDateString()}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      {new Date(auction.auction_start_time).toLocaleTimeString([], { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="text-sm">
+                                    <div className="font-medium">
+                                      {new Date(auction.auction_end_time).toLocaleDateString()}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      {new Date(auction.auction_end_time).toLocaleTimeString([], { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 text-center">
+                                  <Badge 
+                                    variant={getStatusVariant(auction) as "default" | "destructive" | "outline" | "secondary"}
+                                    className="capitalize"
+                                  >
+                                    {auction.status || getAuctionStatus(auction)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="px-6 py-4 text-center">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/admin-dashboard/auction/${auction.id}`)}
+                                    className="gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    <span className="hidden sm:inline">View Details</span>
+                                    <span className="sm:hidden">View</span>
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -776,22 +879,44 @@ const AdminDashboard = () => {
   );
 };
 
+const calculateTimeLeft = (endTime: string) => {
+  const end = new Date(endTime);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  
+  if (diff <= 0) return 'Ended';
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
+const getAuctionStatus = (auction: Auction) => {
+  const now = new Date();
+  const startTime = new Date(auction.auction_start_time);
+  const endTime = new Date(auction.auction_end_time);
+  
+  if (now < startTime) return 'upcoming';
+  if (now > endTime) return 'ended';
+  
+  // If less than 24 hours left
+  if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
+  return 'active';
+};
+
+const getStatusVariant = (auction: Auction) => {
+  const status = getAuctionStatus(auction);
+  switch (status) {
+    case 'active': return 'default';
+    case 'ending_soon': return 'warning';
+    case 'ended': return 'secondary';
+    case 'upcoming': return 'outline';
+    default: return 'default';
+  }
+};
+
 export default AdminDashboard;
-
-
-// const calculateTimeLeft = (endTime: string) => {
-//   const end = new Date(endTime);
-//   const now = new Date();
-//   const diff = end.getTime() - now.getTime();
-  
-//   if (diff <= 0) return 'Ended';
-  
-//   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-//   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-//   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-//   if (days > 0) return `${days}d ${hours}h`;
-//   if (hours > 0) return `${hours}h ${minutes}m`;
-//   return `${minutes}m`;
-// };
-
