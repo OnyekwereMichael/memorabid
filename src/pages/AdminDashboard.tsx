@@ -693,7 +693,7 @@ const AdminDashboard = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
-                                  <span className="text-sm font-medium">{auction.seller || 'Admin'}</span>
+                                  <span className="text-sm font-medium">{auction.user.name || 'Admin'}</span>
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
                                   <span className="font-semibold text-foreground">
@@ -731,7 +731,7 @@ const AdminDashboard = () => {
                                     variant={getStatusVariant(auction) as "default" | "destructive" | "outline" | "secondary"}
                                     className="capitalize"
                                   >
-                                    {auction.status || getAuctionStatus(auction)}
+                                    {auction.stage || getAuctionStatus(auction)}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="px-6 py-4 text-center">
