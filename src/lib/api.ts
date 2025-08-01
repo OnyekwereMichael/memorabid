@@ -233,6 +233,25 @@ export const authAPI = {
   // },
 };
 
+export interface Auction {
+  id: number;
+  name: string;
+  description: string;
+  auction_start_time: string;
+  auction_end_time: string;
+  starting_bid: number;
+  reserve_price: number;
+  bid_increment: number;
+  auto_extend: boolean;
+  featured: boolean;
+  promotional_tags: string[];
+  current_bid?: number;
+  watchers?: number;
+  status?: string;
+  seller?: string;
+  // Add any other fields that might be returned by the API
+}
+
 export const adminAPI = {
   async createAuction(data: CreateAuctionData, token?: string): Promise<{
     success: boolean;
@@ -284,4 +303,42 @@ export const adminAPI = {
       };
     }
   },
-}; 
+  
+  async fetchAuctions(token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction[];
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/auction/fetch`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auctions',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auctions fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auctions error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+};
