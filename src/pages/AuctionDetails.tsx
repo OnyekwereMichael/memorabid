@@ -64,24 +64,21 @@ const AuctionDetails = () => {
   useEffect(() => {
     const fetchAuctionDetails = async () => {
       if (!id) return;
-      
+
       setLoading(true);
       const token = getCookie('token');
-      
+
       try {
-        const response = await adminAPI.fetchAuctions(token);
+        const response = await adminAPI.fetchAuctionById(Number(id), token);
         if (response.success && response.data) {
-          const foundAuction = response.data.find(a => a.id === parseInt(id));
-          if (foundAuction) {
-            setAuction(foundAuction);
-          } else {
-            toast({
-              title: "Auction not found",
-              description: "The requested auction could not be found.",
-              variant: "destructive",
-            });
-            navigate("/admin-dashboard");
-          }
+          setAuction(response.data);
+        } else {
+          toast({
+            title: "Auction not found",
+            description: "The requested auction could not be found.",
+            variant: "destructive",
+          });
+          navigate("/admin-dashboard");
         }
       } catch (error) {
         console.error("Error fetching auction details:", error);
@@ -386,19 +383,46 @@ const AuctionDetails = () => {
                         </CardDescription>
                       </div>
                       <Badge variant={getStatusVariant(auction.status || getAuctionStatus(auction)) as any} className="ml-4">
-                        {auction.status || getAuctionStatus(auction)}
+                        {auction.stage || getAuctionStatus(auction)}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {auction.media_url ? (
-                      <div className="aspect-video w-full rounded-lg overflow-hidden border">
-                        <img 
-                          src={auction.media_url} 
-                          alt={auction.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                    {auction.media && auction.media.length > 0 ? (
+                      <div>
+  {/* Main big image */}
+  <div className="aspect-video w-full rounded-lg overflow-hidden border mb-4">
+    <img
+      src={
+        auction.media?.[0] instanceof Blob
+          ? URL.createObjectURL(auction.media[0])
+          : auction.media?.[0] || ""
+      }
+      alt={auction.title}
+      className="w-full h-full object-cover"
+    />
+  </div>
+
+  {/* Thumbnails */}
+  <div className="flex gap-2">
+    {auction.media?.slice(1).map((img, idx) => (
+      <div key={idx} className="w-20 h-20 rounded overflow-hidden border">
+        <img
+          src={
+            img instanceof Blob
+              ? URL.createObjectURL(img)
+              : typeof img === "string"
+              ? img
+              : ""
+          }
+          alt={`Thumbnail ${idx + 2}`}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    ))}
+  </div>
+</div>
+
                     ) : (
                       <div className="aspect-video w-full rounded-lg border bg-muted flex items-center justify-center">
                         <div className="text-center">
@@ -577,7 +601,7 @@ const AuctionDetails = () => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Created By</span>
-                      <span className="text-sm font-medium">{auction.seller || "Admin"}</span>
+                      <span className="text-sm font-medium">{auction.user.name || "Admin"}</span>
                     </div>
                   </CardContent>
                 </Card>
