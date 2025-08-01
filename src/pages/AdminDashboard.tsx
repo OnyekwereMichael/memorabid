@@ -43,7 +43,7 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { authAPI, adminAPI, CreateAuctionData, Auction } from "@/lib/api";
-import { getCookie, removeCookie } from "@/lib/utils";
+import { formatAuctionTime, getCookie, removeCookie } from "@/lib/utils";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -607,28 +607,38 @@ const AdminDashboard = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="min-w-[200px]">Title</TableHead>
-                            <TableHead className="min-w-[120px]">Seller</TableHead>
-                            <TableHead className="min-w-[100px]">Current Bid</TableHead>
-                            <TableHead className="min-w-[100px]">Time Left</TableHead>
-                            <TableHead className="min-w-[80px]">Watchers</TableHead>
-                            <TableHead className="min-w-[80px]">Status</TableHead>
+                            <TableHead className="min-w-[200px]">Description</TableHead>
+                            <TableHead className="min-w-[120px]">Created By</TableHead>
+                            <TableHead className="min-w-[100px]">Start</TableHead>
+                            <TableHead className="min-w-[100px]">End</TableHead>
+                            {/* <TableHead className="min-w-[80px]">Watchers</TableHead> */}
+                            <TableHead className="min-w-[80px]">Starting Bid</TableHead>
+                            <TableHead className="min-w-[80px]">Stage</TableHead>
                             <TableHead className="min-w-[80px]">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {auctions.map((auction) => (
                             <TableRow key={auction.id}>
-                              <TableCell className="font-medium">{auction.title}</TableCell>
-                              <TableCell>{auction.seller || 'N/A'}</TableCell>
-                              <TableCell>${auction.current_bid?.toLocaleString() || auction.starting_bid.toLocaleString()}</TableCell>
-                              <TableCell>{calculateTimeLeft(auction.auction_end_time)}</TableCell>
-                              <TableCell>{auction.watchers || 0}</TableCell>
-                              <TableCell>
-                                <Badge variant={getStatusVariant(auction) as "default" | "destructive" | "outline" | "secondary"}>
-                                  {/* {getAuctionStatus(auction)} */}
-                                  {auction.status}
-                                </Badge>
-                              </TableCell>
+                                <div className="flex items-center space-x-2">
+  <img
+    src={auction.media?.[0]?.media_url}
+    alt={auction.title}
+    className="w-10 h-10 rounded mr-2 object-cover"
+  />
+  <TableCell className="font-medium">{auction.title}</TableCell>
+</div>
+
+                              <TableCell>{auction.description || 'N/A'}</TableCell>
+                              <TableCell>{auction.user.name || 'N/A'}</TableCell>
+                              <TableCell>{formatAuctionTime(auction.auction_start_time)}</TableCell>
+                              <TableCell>{formatAuctionTime(auction.auction_end_time)}</TableCell>
+                              <TableCell>{auction.starting_bid}</TableCell>
+                              <Badge>
+                              <TableCell>{auction.stage}</TableCell>
+                              </Badge>
+                               
+                            
                               <TableCell>
                                 <Button variant="outline" size="sm">
                                   <Eye className="h-4 w-4" />
@@ -769,42 +779,19 @@ const AdminDashboard = () => {
 export default AdminDashboard;
 
 
-const calculateTimeLeft = (endTime: string) => {
-  const end = new Date(endTime);
-  const now = new Date();
-  const diff = end.getTime() - now.getTime();
+// const calculateTimeLeft = (endTime: string) => {
+//   const end = new Date(endTime);
+//   const now = new Date();
+//   const diff = end.getTime() - now.getTime();
   
-  if (diff <= 0) return 'Ended';
+//   if (diff <= 0) return 'Ended';
   
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+//   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+//   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+//   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-};
+//   if (days > 0) return `${days}d ${hours}h`;
+//   if (hours > 0) return `${hours}h ${minutes}m`;
+//   return `${minutes}m`;
+// };
 
-const getAuctionStatus = (auction: Auction) => {
-  const now = new Date();
-  const startTime = new Date(auction.auction_start_time);
-  const endTime = new Date(auction.auction_end_time);
-  
-  if (now < startTime) return 'upcoming';
-  if (now > endTime) return 'ended';
-  
-  // If less than 24 hours left
-  if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
-  return 'active';
-};
-
-const getStatusVariant = (auction: Auction) => {
-  const status = getAuctionStatus(auction);
-  switch (status) {
-    case 'active': return 'default';
-    case 'ending_soon': return 'warning';
-    case 'ended': return 'secondary';
-    case 'upcoming': return 'outline';
-    default: return 'default';
-  }
-};
