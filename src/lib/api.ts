@@ -235,7 +235,7 @@ export const authAPI = {
 
 export interface Auction {
   id: number;
-  name: string;
+  title: string;
   description: string;
   auction_start_time: string;
   auction_end_time: string;
@@ -248,7 +248,18 @@ export interface Auction {
   current_bid?: number;
   watchers?: number;
   status?: string;
+  stage?: string; // Assuming you want to track the stage of the auction
   seller?: string;
+  media?: File[];
+  media_url?: string; 
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    phone?: string; // Optional, if you want to include phone number
+  }
+  // Assuming media is an array of image URLs
   // Add any other fields that might be returned by the API
 }
 
