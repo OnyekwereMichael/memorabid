@@ -673,7 +673,7 @@ const AdminDashboard = () => {
                                     {auction.media_url ? (
                                       <img 
                                         src={auction.media_url} 
-                                        alt={auction.name}
+                                        alt={auction.title}
                                         className="w-12 h-12 object-cover rounded-lg border shadow-sm"
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
@@ -685,7 +685,7 @@ const AdminDashboard = () => {
                                       </div>
                                     )}
                                     <div className="min-w-0 flex-1">
-                                      <p className="font-medium text-foreground truncate">{auction.name}</p>
+                                      <p className="font-medium text-foreground truncate">{auction.title}</p>
                                       <p className="text-sm text-muted-foreground truncate max-w-xs">
                                         {auction.description}
                                       </p>
