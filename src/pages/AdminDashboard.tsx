@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { authAPI, adminAPI, CreateAuctionData } from "@/lib/api";
+import { authAPI, adminAPI, CreateAuctionData, Auction } from "@/lib/api";
 import { getCookie, removeCookie } from "@/lib/utils";
 
 const AdminDashboard = () => {
@@ -52,6 +52,7 @@ const AdminDashboard = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [auctionFormData, setAuctionFormData] = useState<CreateAuctionData>({
+    name: "", // Add this field
     description: "",
     auction_start_time: "",
     auction_end_time: "",
@@ -64,6 +65,8 @@ const AdminDashboard = () => {
     images: [],
   });
   const [isCreatingAuction, setIsCreatingAuction] = useState(false);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [loadingAuctions, setLoadingAuctions] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -76,6 +79,27 @@ const AdminDashboard = () => {
       setLoadingUser(false);
     };
     fetchUser();
+
+    // Add this new effect to fetch auctions
+    const fetchAuctions = async () => {
+      setLoadingAuctions(true);
+      const token = getCookie('token');
+      if (!token) return;
+      
+      const response = await adminAPI.fetchAuctions(token);
+      if (response.success && response.data) {
+        setAuctions(response.data);
+      } else {
+        toast({
+          title: "Failed to fetch auctions",
+          description: response.message || "Could not load auction data",
+          variant: "destructive",
+        });
+      }
+      setLoadingAuctions(false);
+    };
+    
+    fetchAuctions();
   }, []);
 
   const sidebarItems = [
@@ -136,6 +160,30 @@ const AdminDashboard = () => {
 
   const handleCreateAuction = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate bid increment
+    if (auctionFormData.bid_increment <= 0 || isNaN(auctionFormData.bid_increment)) {
+      toast({
+        title: "Invalid Bid Increment",
+        description: "Bid increment must be greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate auction end time is after start time
+    const startTime = new Date(auctionFormData.auction_start_time);
+    const endTime = new Date(auctionFormData.auction_end_time);
+    
+    if (endTime <= startTime) {
+      toast({
+        title: "Invalid Auction End Time",
+        description: "The auction end time must be a date after auction start time.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsCreatingAuction(true);
     
     try {
@@ -159,6 +207,7 @@ const AdminDashboard = () => {
           featured: false,
           promotional_tags: ["", "", ""],
           images: [],
+          name: ""
         });
       } else {
         toast({
@@ -180,6 +229,20 @@ const AdminDashboard = () => {
   };
 
   const handleInputChange = (field: keyof CreateAuctionData, value: any) => {
+    // Add validation for bid_increment
+    if (field === 'bid_increment') {
+      // Ensure bid increment is a positive number greater than 0
+      if (typeof value === 'number' && (value <= 0 || isNaN(value))) {
+        toast({
+          title: "Invalid Bid Increment",
+          description: "Bid increment must be greater than zero.",
+          variant: "destructive",
+        });
+        // Set a valid default value
+        value = 1;
+      }
+    }
+    
     setAuctionFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -277,6 +340,17 @@ const AdminDashboard = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleCreateAuction} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Auction Name</Label>
+                      <Input 
+                        id="name" 
+                        placeholder="Enter auction item name..." 
+                        value={auctionFormData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        required 
+                      />
+                    </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
                       <Textarea 
@@ -542,27 +616,28 @@ const AdminDashboard = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {activeAuctions.map((auction) => (
-                          <TableRow key={auction.id}>
-                            <TableCell className="font-medium">{auction.title}</TableCell>
-                            <TableCell>{auction.seller}</TableCell>
-                            <TableCell>${auction.currentBid.toLocaleString()}</TableCell>
-                            <TableCell>{auction.endTime}</TableCell>
-                            <TableCell>{auction.watchers}</TableCell>
-                            <TableCell>
-                              <Badge variant={auction.status === 'active' ? 'default' : 'destructive'}>
-                                {auction.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                          {auctions.map((auction) => (
+                            <TableRow key={auction.id}>
+                              <TableCell className="font-medium">{auction.title}</TableCell>
+                              <TableCell>{auction.seller || 'N/A'}</TableCell>
+                              <TableCell>${auction.current_bid?.toLocaleString() || auction.starting_bid.toLocaleString()}</TableCell>
+                              <TableCell>{calculateTimeLeft(auction.auction_end_time)}</TableCell>
+                              <TableCell>{auction.watchers || 0}</TableCell>
+                              <TableCell>
+                                <Badge variant={getStatusVariant(auction) as "default" | "destructive" | "outline" | "secondary"}>
+                                  {/* {getAuctionStatus(auction)} */}
+                                  {auction.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </CardContent>
                 </Card>
@@ -692,3 +767,44 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+const calculateTimeLeft = (endTime: string) => {
+  const end = new Date(endTime);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  
+  if (diff <= 0) return 'Ended';
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
+const getAuctionStatus = (auction: Auction) => {
+  const now = new Date();
+  const startTime = new Date(auction.auction_start_time);
+  const endTime = new Date(auction.auction_end_time);
+  
+  if (now < startTime) return 'upcoming';
+  if (now > endTime) return 'ended';
+  
+  // If less than 24 hours left
+  if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
+  return 'active';
+};
+
+const getStatusVariant = (auction: Auction) => {
+  const status = getAuctionStatus(auction);
+  switch (status) {
+    case 'active': return 'default';
+    case 'ending_soon': return 'warning';
+    case 'ended': return 'secondary';
+    case 'upcoming': return 'outline';
+    default: return 'default';
+  }
+};
