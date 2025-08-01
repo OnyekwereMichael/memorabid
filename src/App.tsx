@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import UserDashboard from "./pages/UserDashboard";
+import AuctionDetails from "./pages/AuctionDetails";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin-dashboard/auction/:id" element={<ProtectedRoute><AuctionDetails /></ProtectedRoute>} />
           <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
           <Route path="/user-dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
