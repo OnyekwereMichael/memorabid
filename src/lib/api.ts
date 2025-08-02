@@ -352,4 +352,233 @@ export const adminAPI = {
       };
     }
   },
+
+  async fetchAuctionById(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/view/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auction by ID error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
+  async fetchAuctionsByCategory(
+    filter: string,
+    token?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction[];
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(
+        `https://ecc.lafmax.com/api/admin/auction/fetch?filter=${encodeURIComponent(filter)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auctions',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auctions fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auctions by category error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
+  async updateAuction(id: number, data: Partial<Auction>, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to update auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction updated successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Update auction error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
+  async deleteAuction(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/delete/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to delete auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction deleted successfully',
+      };
+    } catch (error) {
+      console.error('Delete auction error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
+  async restartAuction(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/restart/${id}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to restart auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction restarted successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Restart auction error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
+  async cancelAuction(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/cancel/${id}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to cancel auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction cancelled successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Cancel auction error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
 };

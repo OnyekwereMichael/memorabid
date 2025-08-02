@@ -88,7 +88,8 @@ const UserDashboard = () => {
     const fetchAuctions = async () => {
       setLoadingAuctions(true);
       const token = getCookie('token');
-      const response = await adminAPI.fetchAuctions(token || undefined);
+      // Use statusFilter directly for API filter
+      const response = await adminAPI.fetchAuctionsByCategory(statusFilter, token || undefined);
       if (response.success && response.data) {
         setAuctions(response.data);
         // Filter live auctions (currently active)
@@ -103,7 +104,7 @@ const UserDashboard = () => {
       setLoadingAuctions(false);
     };
     fetchAuctions();
-  }, []);
+  }, [statusFilter]);
 
   const sidebarItems = [
     { title: "Dashboard", url: "/user-dashboard", icon: Home },
@@ -303,10 +304,15 @@ const UserDashboard = () => {
                             <SelectValue placeholder="All statuses" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="ongoing">Ongoing</SelectItem>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
                             <SelectItem value="upcoming">Upcoming</SelectItem>
-                            <SelectItem value="past">Past</SelectItem>
+                            <SelectItem value="canceled">Canceled</SelectItem>
+                            <SelectItem value="suspended">Suspended</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
