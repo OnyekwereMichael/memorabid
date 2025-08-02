@@ -12,63 +12,112 @@ const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative py-12 sm:py-16 md:py-24 px-4 overflow-hidden">
+      <section className="relative py-16 sm:py-20 md:py-32 lg:py-40 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-60"></div>
         <div className="relative max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Content */}
-            <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary/20 to-primary-glow/20 backdrop-blur-sm border border-primary/20 rounded-full mb-6 sm:mb-8 shadow-glow">
-                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary mr-2 sm:mr-3" />
-                <span className="text-xs sm:text-sm font-semibold text-primary">Exclusive Cricket Collectibles</span>
+            <div className="text-center lg:text-left space-y-8">
+              <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary/20 to-primary-glow/20 backdrop-blur-sm border border-primary/20 rounded-full shadow-glow">
+                <Award className="h-5 w-5 text-primary mr-3" />
+                <span className="text-sm font-semibold text-primary tracking-wide">PREMIUM CRICKET COLLECTIBLES</span>
               </div>
               
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-12 max-sm:leading-tight">
-                Discover Cricket Legends at   ECC
-              </h1>
+              <div className="space-y-6">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-tight">
+                  <span className="block bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent">
+                    Discover Cricket
+                  </span>
+                  <span className="block bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mt-2">
+                    Legends
+                  </span>
+                  <span className="block text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-semibold text-muted-foreground mt-4">
+                    at ECC
+                  </span>
+                </h1>
 
-              
-              <p className="text-[16px] sm:text-xl md:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl lg:mx-0 mx-auto leading-relaxed">
-                The premier destination for authenticated cricket memorabilia, vintage equipment, 
-                and exclusive collectibles. Join thousands of cricket enthusiasts in our trusted marketplace.
-              </p>
+                <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl lg:mx-0 mx-auto leading-relaxed">
+                  The world's premier destination for authenticated cricket memorabilia, vintage equipment, 
+                  and exclusive collectibles. Join thousands of passionate cricket enthusiasts in our trusted marketplace.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 lg:gap-6 justify-center lg:justify-start">
+                <Button asChild size="lg" className="text-lg px-10 py-7 shadow-elegant hover:shadow-glow transition-all duration-500 group">
+                  <Link to="/login" className="flex items-center gap-2">
+                    Start Bidding
+                    <Gavel className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-lg px-10 py-7 border-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300">
+                  <Link to="/register">Become a Seller</Link>
+                </Button>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 pt-6">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span>100% Authenticated</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 text-primary" />
+                  <span>4.9/5 Rating</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Globe className="h-4 w-4 text-primary" />
+                  <span>Global Shipping</span>
+                </div>
+              </div>
             </div>
             
             {/* Hero Image */}
-            <div className="flex-1 w-full lg:w-auto">
-              <div className="relative rounded-2xl overflow-hidden shadow-feature">
+            <div className="relative">
+              <div className="relative rounded-3xl overflow-hidden shadow-feature">
                 <img 
                   src={heroImage} 
                   alt="Cricket memorabilia auction items" 
-                  className="w-full h-64 sm:h-80 lg:h-96 object-cover"
+                  className="w-full h-80 sm:h-96 lg:h-[500px] object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                
+                {/* Floating elements */}
+                <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium">Live Auctions</span>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-primary">$125K</div>
+                    <div className="text-xs text-muted-foreground">Record Sale</div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center lg:justify-start mb-12 sm:mb-20">
-            <Button asChild size="lg" className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-elegant hover:shadow-glow transition-all duration-300 w-full sm:w-auto">
-              <Link to="/login">Start Bidding</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border-2 hover:bg-primary/5 transition-all duration-300 w-full sm:w-auto">
-              <Link to="/register">Become a Seller</Link>
-            </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="mt-20">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
+        <div className="mt-24 lg:mt-32">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl font-bold text-muted-foreground mb-2">Trusted by Cricket Enthusiasts Worldwide</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {[
-              { label: "Active Auctions", value: "1,800+" },
-              { label: "Verified Sellers", value: "650+" },
-              { label: "Total Sales", value: "$8M+" },
-              { label: "Cricket Fans", value: "25K+" }
+              { label: "Active Auctions", value: "1,800+", icon: <Gavel className="h-6 w-6" /> },
+              { label: "Verified Sellers", value: "650+", icon: <Users className="h-6 w-6" /> },
+              { label: "Total Sales", value: "$8M+", icon: <TrendingUp className="h-6 w-6" /> },
+              { label: "Cricket Fans", value: "25K+", icon: <Star className="h-6 w-6" /> }
             ].map((stat, i) => (
-              <div key={i} className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-soft">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-1 sm:mb-2">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
+              <div key={i} className="text-center p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-soft hover:shadow-feature transition-all duration-300 group">
+                <div className="flex justify-center mb-3 text-primary group-hover:scale-110 transition-transform duration-300">
+                  {stat.icon}
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold text-primary mb-2">{stat.value}</div>
+                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
               </div>
             ))}
           </div>

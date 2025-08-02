@@ -145,11 +145,17 @@ const AuctionDetails = () => {
 
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
+      case 'live': return 'default';
       case 'active': return 'default';
-      case 'ending_soon': return 'warning';
+      case 'ending_soon': return 'destructive';
       case 'ended': return 'secondary';
+      case 'future': return 'outline';
       case 'upcoming': return 'outline';
       case 'pending_approval': return 'outline';
+      case 'canceled': return 'destructive';
+      case 'cancelled': return 'destructive';
+      case 'suspended': return 'destructive';
+      case 'rejected': return 'destructive';
       default: return 'default';
     }
   };
@@ -168,35 +174,36 @@ const AuctionDetails = () => {
   };
 
   const handleUpdateAuction = async () => {
-    setActionLoading(true);
-    try {
-      toast({
-        title: "Update Feature",
-        description: "Update auction functionality will be implemented soon.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update auction.",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-    }
+    if (!auction) return;
+    navigate(`/update-auction/${auction.id}`);
   };
 
   const handleDeleteAuction = async () => {
+    if (!auction) return;
     setActionLoading(true);
+    const token = getCookie('token');
+    
     try {
-      toast({
-        title: "Delete Feature",
-        description: "Delete auction functionality will be implemented soon.",
-        variant: "destructive",
-      });
+      const response = await adminAPI.deleteAuction(auction.id, token);
+      
+      if (response.success) {
+        toast({
+          title: "Auction Deleted",
+          description: "The auction has been successfully deleted.",
+        });
+        navigate("/admin-dashboard");
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: response.message || "Failed to delete auction.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error("Error deleting auction:", error);
       toast({
         title: "Error",
-        description: "Failed to delete auction.",
+        description: "An unexpected error occurred while deleting the auction.",
         variant: "destructive",
       });
     } finally {
@@ -207,17 +214,29 @@ const AuctionDetails = () => {
   const handleCancelAuction = async () => {
     if (!auction) return;
     setActionLoading(true);
+    const token = getCookie('token');
+    
     try {
-      // Update auction status to cancelled
-      setAuction({ ...auction, status: 'cancelled' });
-      toast({
-        title: "Auction Cancelled",
-        description: "The auction has been successfully cancelled.",
-      });
+      const response = await adminAPI.cancelAuction(auction.id, token);
+      
+      if (response.success) {
+        setAuction({ ...auction, status: 'canceled' });
+        toast({
+          title: "Auction Cancelled",
+          description: "The auction has been successfully cancelled.",
+        });
+      } else {
+        toast({
+          title: "Cancel Failed",
+          description: response.message || "Failed to cancel auction.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error("Error cancelling auction:", error);
       toast({
         title: "Error",
-        description: "Failed to cancel auction.",
+        description: "An unexpected error occurred while cancelling the auction.",
         variant: "destructive",
       });
     } finally {
@@ -228,17 +247,29 @@ const AuctionDetails = () => {
   const handleRestartAuction = async () => {
     if (!auction) return;
     setActionLoading(true);
+    const token = getCookie('token');
+    
     try {
-      // Update auction status to active
-      setAuction({ ...auction, status: 'active' });
-      toast({
-        title: "Auction Restarted",
-        description: "The auction has been successfully restarted.",
-      });
+      const response = await adminAPI.restartAuction(auction.id, token);
+      
+      if (response.success) {
+        setAuction({ ...auction, status: 'live' });
+        toast({
+          title: "Auction Restarted",
+          description: "The auction has been successfully restarted.",
+        });
+      } else {
+        toast({
+          title: "Restart Failed",
+          description: response.message || "Failed to restart auction.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error("Error restarting auction:", error);
       toast({
         title: "Error",
-        description: "Failed to restart auction.",
+        description: "An unexpected error occurred while restarting the auction.",
         variant: "destructive",
       });
     } finally {
@@ -253,18 +284,18 @@ const AuctionDetails = () => {
     // Update is always available
     actions.push({ key: 'update', label: 'Update auction', icon: Edit, action: handleUpdateAuction });
 
-    // Delete is available for upcoming or ended auctions
-    if (status === 'upcoming' || status === 'ended' || status === 'cancelled') {
+    // Delete is available for upcoming, ended, cancelled, suspended, or rejected auctions
+    if (status === 'upcoming' || status === 'future' || status === 'ended' || status === 'canceled' || status === 'cancelled' || status === 'suspended' || status === 'rejected') {
       actions.push({ key: 'delete', label: 'Delete auction', icon: Trash, action: handleDeleteAuction });
     }
 
-    // Cancel is available for active or upcoming auctions
-    if (status === 'active' || status === 'upcoming' || status === 'ending_soon') {
+    // Cancel is available for active, live, future, or upcoming auctions
+    if (status === 'active' || status === 'live' || status === 'future' || status === 'upcoming' || status === 'ending_soon') {
       actions.push({ key: 'cancel', label: 'Cancel auction', icon: X, action: handleCancelAuction });
     }
 
-    // Restart is available for ended or cancelled auctions
-    if (status === 'ended' || status === 'cancelled') {
+    // Restart is available for ended, cancelled, suspended, or rejected auctions
+    if (status === 'ended' || status === 'canceled' || status === 'cancelled' || status === 'suspended' || status === 'rejected') {
       actions.push({ key: 'restart', label: 'Restart auction', icon: RotateCcw, action: handleRestartAuction });
     }
 

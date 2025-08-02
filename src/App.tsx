@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import AuctionDetails from "./pages/AuctionDetails";
+import UpdateAuction from "./pages/UpdateAuction";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "@/lib/utils";
 
@@ -35,6 +36,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin-dashboard/auction/:id" element={<ProtectedRoute><AuctionDetails /></ProtectedRoute>} />
+          <Route path="/auction-details/:id" element={<ProtectedRoute><AuctionDetails /></ProtectedRoute>} />
+          <Route path="/update-auction/:id" element={<ProtectedRoute><UpdateAuction /></ProtectedRoute>} />
           <Route path="/seller-dashboard" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
           <Route path="/user-dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
