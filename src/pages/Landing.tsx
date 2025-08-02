@@ -12,7 +12,7 @@ const Landing = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-32 lg:py-40 px-4 overflow-hidden">
+      <section className="relative py-16 sm:py-20 md:py-32 lg:py-10 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-60"></div>
         <div className="relative max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
