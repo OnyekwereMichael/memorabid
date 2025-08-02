@@ -6,6 +6,23 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -34,7 +51,12 @@ import {
   Shield,
   CalendarDays,
   Eye,
-  Tag
+  Tag,
+  MoreVertical,
+  Edit,
+  Trash,
+  X,
+  RotateCcw
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +70,7 @@ const AuctionDetails = () => {
   const [auction, setAuction] = useState<Auction | null>(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -142,6 +165,110 @@ const AuctionDetails = () => {
     // If less than 24 hours left
     if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
     return 'active';
+  };
+
+  const handleUpdateAuction = async () => {
+    setActionLoading(true);
+    try {
+      toast({
+        title: "Update Feature",
+        description: "Update auction functionality will be implemented soon.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update auction.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteAuction = async () => {
+    setActionLoading(true);
+    try {
+      toast({
+        title: "Delete Feature",
+        description: "Delete auction functionality will be implemented soon.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete auction.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelAuction = async () => {
+    if (!auction) return;
+    setActionLoading(true);
+    try {
+      // Update auction status to cancelled
+      setAuction({ ...auction, status: 'cancelled' });
+      toast({
+        title: "Auction Cancelled",
+        description: "The auction has been successfully cancelled.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel auction.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRestartAuction = async () => {
+    if (!auction) return;
+    setActionLoading(true);
+    try {
+      // Update auction status to active
+      setAuction({ ...auction, status: 'active' });
+      toast({
+        title: "Auction Restarted",
+        description: "The auction has been successfully restarted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to restart auction.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getAvailableActions = (currentStatus: string) => {
+    const status = currentStatus.toLowerCase();
+    const actions = [];
+
+    // Update is always available
+    actions.push({ key: 'update', label: 'Update auction', icon: Edit, action: handleUpdateAuction });
+
+    // Delete is available for upcoming or ended auctions
+    if (status === 'upcoming' || status === 'ended' || status === 'cancelled') {
+      actions.push({ key: 'delete', label: 'Delete auction', icon: Trash, action: handleDeleteAuction });
+    }
+
+    // Cancel is available for active or upcoming auctions
+    if (status === 'active' || status === 'upcoming' || status === 'ending_soon') {
+      actions.push({ key: 'cancel', label: 'Cancel auction', icon: X, action: handleCancelAuction });
+    }
+
+    // Restart is available for ended or cancelled auctions
+    if (status === 'ended' || status === 'cancelled') {
+      actions.push({ key: 'restart', label: 'Restart auction', icon: RotateCcw, action: handleRestartAuction });
+    }
+
+    return actions;
   };
 
   // Mock bid history data - in real app this would come from API
@@ -379,15 +506,66 @@ const AuctionDetails = () => {
                 <Card className="shadow-card border-0">
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <CardTitle className="text-2xl mb-2">{auction.title}</CardTitle>
                         <CardDescription className="text-base">
                           {auction.description}
                         </CardDescription>
                       </div>
-                      <Badge variant={getStatusVariant(auction.status || getAuctionStatus(auction)) as any} className="ml-4">
-                        {auction.status || getAuctionStatus(auction)}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={getStatusVariant(auction.status || getAuctionStatus(auction)) as any}>
+                          {auction.status || getAuctionStatus(auction)}
+                        </Badge>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            {getAvailableActions(auction.status || getAuctionStatus(auction)).map((action) => (
+                              <AlertDialog key={action.key}>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="cursor-pointer"
+                                  >
+                                    <action.icon className="h-4 w-4 mr-2" />
+                                    {action.label}
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      {action.key === 'delete' ? 'Delete Auction' :
+                                       action.key === 'cancel' ? 'Cancel Auction' :
+                                       action.key === 'restart' ? 'Restart Auction' :
+                                       'Update Auction'}
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {action.key === 'delete' ? 'This action cannot be undone. This will permanently delete the auction and all associated data.' :
+                                       action.key === 'cancel' ? 'This will cancel the auction and stop all bidding activity.' :
+                                       action.key === 'restart' ? 'This will restart the auction and allow bidding to resume.' :
+                                       'This will open the update form for this auction.'}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={action.action}
+                                      disabled={actionLoading}
+                                      className={action.key === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
+                                    >
+                                      {actionLoading ? 'Processing...' : 'Confirm'}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -491,43 +669,45 @@ const AuctionDetails = () => {
                       )}
                     </TabsContent>
                     
-                    <TabsContent value="bids" className="p-6">
-                      <div className="space-y-4">
-                        <h3 className="font-medium">Recent Bids</h3>
-                        {bidHistory.length > 0 ? (
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Bidder</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Time</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {bidHistory.map((bid) => (
-                                <TableRow key={bid.id}>
-                                  <TableCell className="font-medium">{bid.bidder}</TableCell>
-                                  <TableCell className="font-bold text-primary">
-                                    ${bid.amount.toLocaleString()}
-                                  </TableCell>
-                                  <TableCell className="text-muted-foreground">
-                                    {new Date(bid.time).toLocaleString()}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        ) : (
-                          <div className="text-center py-8">
-                            <Gavel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="font-medium mb-1">No bids yet</h3>
-                            <p className="text-sm text-muted-foreground">
-                              This auction hasn't received any bids yet
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
+                     <TabsContent value="bids" className="p-6">
+                       <div className="space-y-4">
+                         <h3 className="font-medium">Recent Bids</h3>
+                         {bidHistory.length > 0 ? (
+                           <div className="overflow-x-auto">
+                             <Table>
+                               <TableHeader>
+                                 <TableRow>
+                                   <TableHead>Bidder</TableHead>
+                                   <TableHead>Amount</TableHead>
+                                   <TableHead>Time</TableHead>
+                                 </TableRow>
+                               </TableHeader>
+                               <TableBody>
+                                 {bidHistory.map((bid) => (
+                                   <TableRow key={bid.id}>
+                                     <TableCell className="font-medium">{bid.bidder}</TableCell>
+                                     <TableCell className="font-bold text-primary">
+                                       ${bid.amount.toLocaleString()}
+                                     </TableCell>
+                                     <TableCell className="text-muted-foreground">
+                                       {new Date(bid.time).toLocaleString()}
+                                     </TableCell>
+                                   </TableRow>
+                                 ))}
+                               </TableBody>
+                             </Table>
+                           </div>
+                         ) : (
+                           <div className="text-center py-8">
+                             <Gavel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                             <h3 className="font-medium mb-1">No bids yet</h3>
+                             <p className="text-sm text-muted-foreground">
+                               This auction hasn't received any bids yet
+                             </p>
+                           </div>
+                         )}
+                       </div>
+                     </TabsContent>
                   </Tabs>
                 </Card>
               </div>
