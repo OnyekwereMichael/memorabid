@@ -175,6 +175,22 @@ const AuctionDetails = () => {
 
   const handleUpdateAuction = async () => {
     if (!auction) return;
+    // Check required fields
+    if (
+      !auction.title ||
+      !auction.description ||
+      !auction.starting_bid ||
+      !auction.bid_increment ||
+      !auction.auction_start_time ||
+      !auction.auction_end_time
+    ) {
+      toast({
+        title: "Missing Information",
+        description: "Please ensure all required auction fields are filled before updating.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/update-auction/${auction.id}`);
   };
 

@@ -442,7 +442,7 @@ export const adminAPI = {
   }> {
     try {
       const response = await fetch(`https://ecc.lafmax.com/api/admin/auction/update/${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
