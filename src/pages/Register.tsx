@@ -123,7 +123,7 @@ const Register = () => {
                         <RadioGroup
                           value={values.role}
                           onValueChange={(value) => setFieldValue("role", value)}
-                          className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
+                          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
                         >
                           <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                             <RadioGroupItem value="user" id="user" />
@@ -145,7 +145,7 @@ const Register = () => {
                               </div>
                             </Label>
                           </div>
-                          <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
+                          {/* <div className="flex items-center space-x-3 border border-border/50 rounded-xl p-3 sm:p-4 bg-background/50 hover:bg-background/80 transition-all cursor-pointer">
                             <RadioGroupItem value="admin" id="admin" />
                             <Label htmlFor="admin" className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-1">
                               <Gavel className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -154,7 +154,7 @@ const Register = () => {
                                 <p className="text-xs text-muted-foreground">Manage Platform</p>
                               </div>
                             </Label>
-                          </div>
+                          </div> */}
                         </RadioGroup>
                         {errors.role && touched.role && (
                           <div className="text-red-500 text-sm">{errors.role}</div>

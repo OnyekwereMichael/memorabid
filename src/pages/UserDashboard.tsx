@@ -24,7 +24,7 @@ import {
   LogOut
 } from "lucide-react";
 import { authAPI } from "@/lib/api";
-import { removeCookie, isAuthenticated } from "@/lib/utils";
+import { removeCookie, isAuthenticated, getCookie } from "@/lib/utils";
 
 interface UserInfo {
   username: string;
@@ -35,23 +35,40 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
+    const [loadingUser, setLoadingUser] = useState(true);
+useEffect(() => {
+  const fetchUser = async () => {
+    const token = getCookie('token');
+    if (!token) {
+      setLoading(false); // even if not authenticated, stop loading
+      return;
+    }
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
     try {
-      const response = await authAPI.getMe();
-      if (response.success && response.data) {
-        setUserInfo(response.data);
+      const response = await authAPI.getMe(token);
+      if (response.success && response.data?.name) {
+        setUserName(response.data.name);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error("Failed to fetch user", error);
     } finally {
       setLoading(false);
     }
   };
+
+  fetchUser();
+}, []);
+
+
+  console.log("User Name:", userName);
+  
+  
+  // useEffect(() => {
+  //   fetchUserData();
+  // }, []);
+
+
 
   // Navigation items
   const navItems = [
@@ -133,7 +150,7 @@ const UserDashboard = () => {
               <SidebarTrigger />
               <div>
                 <h1 className="text-2xl font-bold">
-                  Welcome back{userInfo ? `, ${userInfo.username}` : ''}!
+                  Welcome back{userName ? `, ${userName}` : ''}!
                 </h1>
                 <p className="text-muted-foreground">Manage your auctions and bids</p>
               </div>
