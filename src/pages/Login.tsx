@@ -19,11 +19,19 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (values: { email: string; password: string }, { setSubmitting, setFieldError }: any, userType: "admin" | "seller" | "user") => {
+  const handleSubmit = async (
+    values: { email: string; password: string },
+    { setSubmitting, setFieldError }: any,
+    userType: "admin" | "seller" | "user"
+  ) => {
     setIsLoading(true);
     setSubmitting(true);
     try {
-      const response = await authAPI.login({ ...values, role: userType });
+      let role: "admin" | "user" = "user";
+      if (userType === "admin") role = "admin";
+      // If you have a separate seller endpoint, handle it here
+
+      const response = await authAPI.login({ ...values, role });
       if (response.success) {
         toast({
           title: "Login Successful!",

@@ -36,3 +36,23 @@ export function formatAuctionTime(utcString) {
     hour12: true,
   });
 }
+
+
+  // Helper to get the auction object from the API response
+  const getAuctionObj = (item: any) => item.auction || {};
+  
+export   // Helper to get time left
+  const getTimeLeft = (item: any) => {
+    const auction = getAuctionObj(item);
+    const now = new Date();
+    const end = new Date(auction.auction_end_time);
+    const diff = end.getTime() - now.getTime();
+
+    if (diff <= 0) return "Ended";
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };

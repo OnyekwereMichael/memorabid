@@ -72,7 +72,7 @@ const AdminDashboard = () => {
     const fetchUser = async () => {
       const token = getCookie('token');
       if (!token) return;
-      const response = await authAPI.getMe(token);
+      const response = await authAPI.getMe_Admin(token);
       if (response.success && response.data && response.data.name) {
         setUserName(response.data.name);
       }
@@ -86,10 +86,11 @@ const AdminDashboard = () => {
       const token = getCookie('token');
       if (!token) return;
       
-      const response = await adminAPI.fetchAuctions(token);
-      if (response.success && response.data) {
+      const response = await adminAPI.fetchAuctions_Admin(token);
+      if (response.success && Array.isArray(response.data)) {
         setAuctions(response.data);
       } else {
+        setAuctions([]);
         toast({
           title: "Failed to fetch auctions",
           description: response.message || "Could not load auction data",
@@ -672,7 +673,7 @@ const AdminDashboard = () => {
                                   <div className="flex items-center gap-3">
                                     {auction.media_url ? (
                                       <img 
-                                        src={auction.media_url} 
+                                        src={auction.media_path} 
                                         alt={auction.title}
                                         className="w-12 h-12 object-cover rounded-lg border shadow-sm"
                                         onError={(e) => {
@@ -693,7 +694,7 @@ const AdminDashboard = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
-                                  <span className="text-sm font-medium">{auction.user.name || 'Admin'}</span>
+                                  <span className="text-sm font-medium">{auction.user?.name || 'Admin'}</span>
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
                                   <span className="font-semibold text-foreground">
