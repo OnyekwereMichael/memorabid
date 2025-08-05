@@ -39,7 +39,7 @@ export interface CreateAuctionData {
   images: File[]; // if you plan to use this for file upload later
 }
 
-const API_BASE_URL = 'http://affliate.rosymaxpharmacy.com';
+const API_BASE_URL = 'https://affliate.rosymaxpharmacy.com';
 
 export const authAPI = {
   async register(data: RegisterData): Promise<RegisterResponse> {
