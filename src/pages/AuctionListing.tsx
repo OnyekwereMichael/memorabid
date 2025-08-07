@@ -25,6 +25,7 @@ import { adminAPI, auctionAPI } from "@/lib/api";
 import type { Auction } from "@/lib/api";
 import { getCookie, getTimeLeft } from "@/lib/utils";
 import { log } from "node:console";
+import AuctionTimer from "./AuctionTimer";
 
 const AuctionListing = () => {
   const navigate = useNavigate();
@@ -242,17 +243,18 @@ const AuctionListing = () => {
                   <Link to={`/auction-details/${auction.id}`}>
                     <CardHeader className="p-0">
                       <div className="aspect-square relative overflow-hidden bg-muted">
-                        {auction.media_url ? (
-                          <img
-                            src={auction.media_url}
-                            alt={auction.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Gavel className="h-12 w-12 text-muted-foreground" />
-                          </div>
-                        )}
+                       {auction.media && auction.media.length > 0 ? (
+  <img
+    src={auction.media[0].media_url}
+    alt={auction.title}
+    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+  />
+) : (
+  <div className="w-full h-full flex items-center justify-center">
+    <Gavel className="h-12 w-12 text-muted-foreground" />
+  </div>
+)}
+
                         
                         {/* Status Badge */}
                         <div className="absolute top-3 left-3">
@@ -327,7 +329,8 @@ const AuctionListing = () => {
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Timer className="h-3 w-3" />
                               <span className={timeLeft === "Ended" ? "text-destructive" : ""}>
-                                {timeLeft}
+                                <AuctionTimer auction={auction} />
+
                               </span>
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground">

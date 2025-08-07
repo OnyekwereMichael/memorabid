@@ -26,11 +26,14 @@ export interface RegisterResponse {
 }
 
 export interface CreateAuctionData {
-  name: string; // ← ADD this
+  title: string; // ← ADD this
   description: string;
   auction_start_time: string;
   auction_end_time: string;
   starting_bid: number;
+  buy_now_price?: number; // Optional, if you want to allow buy now price
+  media: File[] | File; // Assuming media is an array of files or a single file
+
   reserve_price?: number;
   bid_increment: number;
   auto_extend: boolean;
@@ -39,7 +42,7 @@ export interface CreateAuctionData {
   images: File[]; // if you plan to use this for file upload later
 }
 
-const API_BASE_URL = 'https://affliate.rosymaxpharmacy.com';
+const API_BASE_URL = 'https://affliate.rosymaxpharmacy.com/api';
 
 export const authAPI = {
   async register(data: RegisterData): Promise<RegisterResponse> {
@@ -281,35 +284,69 @@ export interface Auction {
 }
 
 export const adminAPI = {
-  async createAuction(data: CreateAuctionData, token?: string): Promise<{
+ async createAuction(data: CreateAuctionData, token?: string): Promise<{
     success: boolean;
     message: string;
     data?: any;
     errors?: Record<string, string[]>;
   }> {
     try {
+      const formData = new FormData();
+
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('auction_start_time', data.auction_start_time);
+      formData.append('auction_end_time', data.auction_end_time);
+      formData.append('starting_bid', String(data.starting_bid));
+      formData.append('reserve_price', String(data.reserve_price));
+      formData.append('bid_increment', String(data.bid_increment)); // ✅ ADDED HERE
+
+      if (data.buy_now_price !== undefined && data.buy_now_price !== null) {
+        formData.append('buy_now_price', String(data.buy_now_price));
+      }
+
+      formData.append('auto_extend', data.auto_extend ? '1' : '0');
+      formData.append('featured', data.featured ? '1' : '0');
+
+      if (Array.isArray(data.promotional_tags)) {
+        data.promotional_tags
+          .filter(tag => tag.trim() !== '')
+          .forEach(tag => formData.append('promotional_tags[]', tag));
+      }
+
+      if (Array.isArray(data.images)) {
+        data.images
+          .filter(file => file instanceof File)
+          .forEach(file => formData.append('media[]', file));
+      }
+
+      // Debugging: Log formData content properly
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       const response = await fetch(`${API_BASE_URL}/auction/admin/post`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          // Don't set 'Content-Type' manually for FormData
         },
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description,
-          auction_start_time: data.auction_start_time,
-          auction_end_time: data.auction_end_time,
-          starting_bid: data.starting_bid,
-          reserve_price: data.reserve_price,
-          bid_increment: data.bid_increment,
-          auto_extend: data.auto_extend,
-          featured: data.featured,
-          promotional_tags: data.promotional_tags.filter(tag => tag.trim() !== ''),        
-        }),
+        body: formData,
       });
 
-      const result = await response.json();
+      const contentType = response.headers.get('content-type');
+      let result: any = {};
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Server returned non-JSON response:", text);
+        return {
+          success: false,
+          message: 'Server error — received non-JSON response.',
+        };
+      }
+
       if (!response.ok) {
         return {
           success: false,
@@ -317,6 +354,7 @@ export const adminAPI = {
           errors: result.errors || {},
         };
       }
+
       return {
         success: true,
         message: result.message || 'Auction created successfully',
@@ -331,7 +369,7 @@ export const adminAPI = {
       };
     }
   },
-  
+
   async fetchAuctions(token?: string): Promise<{
     success: boolean;
     message: string;

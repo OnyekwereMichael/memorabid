@@ -43,6 +43,7 @@ import { adminAPI, Auction, auctionAPI } from "@/lib/api";
 import { getCookie } from "@/lib/utils";
 import { log } from "node:console";
 import { useAuctionStatus } from "./ActiveAuction";
+import AuctionTimer from "./AuctionTimer";
 
 interface Bid {
   id: number;
@@ -78,8 +79,8 @@ const AuctionDetails = () => {
         return (target - now) / (1000 * 60 * 60);
       };
 
-      setStartHours(getHoursRemaining(auction.auction_start_time));
-      setEndHours(getHoursRemaining(auction.auction_end_time));
+      setStartHours(getHoursRemaining(auction?.auction_start_time));
+      setEndHours(getHoursRemaining(auction?.auction_end_time));
     };
 
     updateCountdown();
@@ -214,17 +215,21 @@ const AuctionDetails = () => {
     }
   };
 
-  function isAuctionActive(startTime, endTime) {
-  const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+const isAuctionActive = (startTime, endTime) => {
+  if (!startTime || !endTime) return false;
+
+  const now = new Date(); // current local time
+  const start = new Date(startTime); // from backend (ISO format)
+  const end = new Date(endTime);     // from backend
 
   return now >= start && now <= end;
-}
+};
 
-const active = isAuctionActive(auction.auction_start_time, auction.auction_end_time);
+const active = isAuctionActive(auction?.auction_start_time, auction?.auction_end_time);
+console.log('Auction Active:', active);
 
-console.log(active); 
+
+
 
   const getAuctionStatus = (auction: Auction) => {
     const now = new Date();
@@ -388,6 +393,8 @@ useEffect(() => {
 }, [id]);
 
 console.log("Bid Data:", bidData);
+console.log("Auction media:", auction);
+// console.log("First media URL:", auction.media?.[0]?.media_url);
 
 useEffect(() => {
   const getAuctionDetails = async () => {
@@ -496,22 +503,22 @@ useEffect(() => {
               </CardHeader>
               <CardContent>
                 {/* Product Image */}
-                {auction.media_url ? (
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border mb-6">
-                    <img 
-                      src={auction.media_url} 
-                      alt={auction.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-video w-full rounded-lg border bg-muted flex items-center justify-center mb-6">
-                    <div className="text-center">
-                      <FileImage className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No image available</p>
-                    </div>
-                  </div>
-                )}
+                {auction.media && auction.media.length > 0 ? (
+  <div className="aspect-video w-full rounded-lg overflow-hidden border mb-6">
+    <img 
+      src={auction.media[0].media_url}
+      alt={auction.title}
+      className="w-full h-full object-cover"
+    />
+  </div>
+) : (
+  <div className="aspect-video w-full rounded-lg border bg-muted flex items-center justify-center mb-6">
+    <div className="text-center">
+      <FileImage className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+      <p className="text-muted-foreground">No image available</p>
+    </div>
+  </div>
+)}
 
                 {/* Promotional Tags */}
                 {auction.promotional_tags && auction.promotional_tags.length > 0 && (
@@ -688,14 +695,9 @@ useEffect(() => {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Time Remaining</p>
                   <div className="space-y-2">
-      <p>
-        Auction starts in:{" "}
-        {startHours <= 0 ? "Already started" : `${Math.floor(startHours)} hours`}
-      </p>
-      <p>
-        Auction ends in:{" "}
-        {endHours <= 0 ? "Already ended" : `${Math.floor(endHours)} hours`}
-      </p>
+    {/* <AuctionTimer auction={auction} /> */}
+ <AuctionTimer auction={auction} />
+
     </div>
                 </div>
 
