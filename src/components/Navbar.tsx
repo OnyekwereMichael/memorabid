@@ -72,6 +72,9 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
           <Button size="sm" asChild className="shadow-elegant">
             <Link to="/register">Get Started</Link>
           </Button>
+          <Button size="sm" asChild className="shadow-elegant">
+            <Link to="/login">Auction</Link>
+          </Button>
         </>
       )}
     </>

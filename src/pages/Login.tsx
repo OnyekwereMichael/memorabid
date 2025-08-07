@@ -48,7 +48,7 @@ const Login = () => {
         } else if (userType === "seller") {
           navigate("/seller-dashboard");
         } else {
-          navigate("/user-dashboard");
+          navigate("/auction");
         }
       } else {
         if (response.errors) {
