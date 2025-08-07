@@ -16,6 +16,7 @@ import AuctionListing from "./pages/AuctionListing";
 import SingleAuction from "./pages/SingleAuction";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "@/lib/utils";
+import AuctionDetailsAdmins from "./pages/AuctionDetailsAdmin";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin-dashboard/auction/:id" element={<ProtectedRoute><AuctionDetails /></ProtectedRoute>} />
           <Route path="/auction-details/:id" element={<ProtectedRoute><AuctionDetails /></ProtectedRoute>} />
+          <Route path="/auction-details/admin/:id" element={<ProtectedRoute><AuctionDetailsAdmins /></ProtectedRoute>} />
           <Route path="/update-auction/:id" element={<ProtectedRoute><UpdateAuction /></ProtectedRoute>} />
           <Route path="/auction" element={<ProtectedRoute><AuctionListing /></ProtectedRoute>} />
           <Route path="/auction/:id" element={<ProtectedRoute><SingleAuction /></ProtectedRoute>} />

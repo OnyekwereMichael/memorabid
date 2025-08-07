@@ -26,21 +26,44 @@ export interface RegisterResponse {
 }
 
 export interface CreateAuctionData {
-  title: string; // ← ADD this
+  title: string;
   description: string;
   auction_start_time: string;
   auction_end_time: string;
   starting_bid: number;
-  buy_now_price?: number; // Optional, if you want to allow buy now price
-  media: File[] | File; // Assuming media is an array of files or a single file
-
+  buy_now_price?: number;
   reserve_price?: number;
   bid_increment: number;
   auto_extend: boolean;
   featured: boolean;
   promotional_tags: string[];
-  images: File[]; // if you plan to use this for file upload later
+  media: string[] | File[]; // <-- changed from images to media
 }
+
+export interface Bidder {
+  bidder_id: number;
+  bidder_type: string;
+  user_id: number;
+  name: string;
+  email: string;
+  total_bids: number;
+  highest_bid_by_bidder: string;
+}
+
+export interface BiddersResponse {
+  auction_id: number;
+  total_bidders: number;
+  bidders: Bidder[];
+  highest_bidder: {
+    bidder_id: number;
+    bidder_type: string;
+    user_id: number;
+    name: string;
+    email: string;
+    amount: string;
+  };
+}
+
 
 const API_BASE_URL = 'https://affliate.rosymaxpharmacy.com/api';
 
@@ -269,7 +292,15 @@ export interface Auction {
   status?: string;
   stage?: string; // Assuming you want to track the stage of the auction
   seller?: string;
-  media?: File[];
+  media?: Array<{
+    id: number;
+    auction_id: string;
+    media_type: string;
+    media_path: string;
+    media_url: string;
+    created_at: string;
+    updated_at: string;
+  }>;
   media_url?: string; 
   media_path?: string; // Assuming this is the path to the media
   user: {
@@ -284,82 +315,153 @@ export interface Auction {
 }
 
 export const adminAPI = {
- async createAuction(data: CreateAuctionData, token?: string): Promise<{
+   async createAuction(data: CreateAuctionData, token?: string): Promise<{
     success: boolean;
     message: string;
     data?: any;
     errors?: Record<string, string[]>;
   }> {
     try {
-      const formData = new FormData();
+      const endpoint = `${API_BASE_URL}/auction/admin/post`;
+      
+      // Check if we have media files to send
+      const hasMediaFiles = data.media && Array.isArray(data.media) && data.media.length > 0 && data.media.some(item => item instanceof File);
+      
+      if (hasMediaFiles) {
+        // Send as FormData with files
+        const formData = new FormData();
+        
+        // Add text fields
+        formData.append('title', data.title);
+        formData.append('description', data.description);
+        formData.append('auction_start_time', data.auction_start_time);
+        formData.append('auction_end_time', data.auction_end_time);
+        formData.append('starting_bid', data.starting_bid.toString());
+        formData.append('reserve_price', data.reserve_price?.toString() || '');
+        formData.append('bid_increment', 'Auto'); // send as 'Auto' or 'Fixed' instead of a number
+        if (data.buy_now_price) {
+          formData.append('buy_now_price', data.buy_now_price.toString());
+        }
+        formData.append('auto_extend', data.auto_extend.toString());
+        formData.append('featured', data.featured.toString());
+        
+        // Add promotional tags as JSON string
+        const cleanedTags = (data.promotional_tags || []).filter(tag => tag.trim() !== '');
+        formData.append('promotional_tags', JSON.stringify(cleanedTags));
 
-      formData.append('title', data.title);
-      formData.append('description', data.description);
-      formData.append('auction_start_time', data.auction_start_time);
-      formData.append('auction_end_time', data.auction_end_time);
-      formData.append('starting_bid', String(data.starting_bid));
-      formData.append('reserve_price', String(data.reserve_price));
-      formData.append('bid_increment', String(data.bid_increment)); // ✅ ADDED HERE
-
-      if (data.buy_now_price !== undefined && data.buy_now_price !== null) {
-        formData.append('buy_now_price', String(data.buy_now_price));
-      }
-
-      formData.append('auto_extend', data.auto_extend ? '1' : '0');
-      formData.append('featured', data.featured ? '1' : '0');
-
-      if (Array.isArray(data.promotional_tags)) {
-        data.promotional_tags
-          .filter(tag => tag.trim() !== '')
-          .forEach(tag => formData.append('promotional_tags[]', tag));
-      }
-
-      if (Array.isArray(data.images)) {
-        data.images
-          .filter(file => file instanceof File)
-          .forEach(file => formData.append('media[]', file));
-      }
-
-      // Debugging: Log formData content properly
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auction/admin/post`, {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          // Don't set 'Content-Type' manually for FormData
-        },
-        body: formData,
-      });
-
-      const contentType = response.headers.get('content-type');
-      let result: any = {};
-      if (contentType && contentType.includes('application/json')) {
-        result = await response.json();
+        // formData.append('media[0]', data.featured.toString());
+        
+        // Add media files with proper field names
+        // const firstFile = data.media.find(item => item instanceof File);
+        // if (firstFile) {
+        //   formData.append('media[0]', firstFile);
+        //   console.log(`Added first file:`, firstFile.name, firstFile.type, firstFile.size);
+        // }
+        
+        // console.log(`Sending FormData with ${firstFile} files:`, formData);
+        
+        // Debug: Log all FormData entries
+        for (let [key, value] of formData.entries()) {
+          console.log(`FormData entry - ${key}:`, value);
+        }
+        
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              // Don't set Content-Type for FormData, let browser set it with boundary
+            },
+            body: formData,
+          });
+          
+          const contentType = response.headers.get('content-type');
+          let result: any = {};
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          } else {
+            const text = await response.text();
+            console.error("Non-JSON response:", text);
+            return {
+              success: false,
+              message: 'Server error — received non-JSON response.',
+            };
+          }
+          
+          if (!response.ok) {
+            return {
+              success: false,
+              message: result.message || result.error || 'Failed to create auction',
+              errors: result.errors || {},
+            };
+          }
+          
+          return {
+            success: true,
+            message: result.message || 'Auction created successfully',
+            data: result.data,
+          };
+        } catch (error) {
+          console.error('FormData upload failed, trying without files:', error);
+          // Fallback to JSON without files if FormData fails
+          return this.createAuctionWithoutFiles(data, token);
+        }
       } else {
-        const text = await response.text();
-        console.error("Server returned non-JSON response:", text);
+        // Send as JSON without files
+        const jsonPayload = {
+          title: data.title,
+          description: data.description,
+          auction_start_time: data.auction_start_time,
+          auction_end_time: data.auction_end_time,
+          starting_bid: data.starting_bid,
+          reserve_price: data.reserve_price,
+          bid_increment: 'Auto', // send as 'Auto' or 'Fixed' instead of a number
+          buy_now_price: data.buy_now_price,
+          auto_extend: data.auto_extend,
+          featured: data.featured,
+          promotional_tags: (data.promotional_tags || []).filter(tag => tag.trim() !== ''),
+        };
+        
+        console.log("Sending JSON payload without files:", jsonPayload);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(jsonPayload),
+        });
+        
+        const contentType = response.headers.get('content-type');
+        let result: any = {};
+        if (contentType && contentType.includes('application/json')) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          console.error("Non-JSON response:", text);
+          return {
+            success: false,
+            message: 'Server error — received non-JSON response.',
+          };
+        }
+        
+        if (!response.ok) {
+          return {
+            success: false,
+            message: result.message || result.error || 'Failed to create auction',
+            errors: result.errors || {},
+          };
+        }
+        
         return {
-          success: false,
-          message: 'Server error — received non-JSON response.',
+          success: true,
+          message: result.message || 'Auction created successfully',
+          data: result.data,
         };
       }
-
-      if (!response.ok) {
-        return {
-          success: false,
-          message: result.message || result.error || 'Failed to create auction',
-          errors: result.errors || {},
-        };
-      }
-
-      return {
-        success: true,
-        message: result.message || 'Auction created successfully',
-        data: result.data,
-      };
     } catch (error) {
       console.error('Create auction error:', error);
       return {
@@ -370,6 +472,8 @@ export const adminAPI = {
     }
   },
 
+  // Helper function to create auction without files
+  
   async fetchAuctions(token?: string): Promise<{
     success: boolean;
     message: string;
@@ -482,6 +586,82 @@ export const adminAPI = {
       };
     }
   },
+
+  async fetchAuctionById_Admin(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auction/admin/view/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auction by ID error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+  async fetchAuctionById_bidders(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: BiddersResponse;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auction/admin/${id}/bidder`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auction by ID error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
 
   
   async updateAuction(id: number, data: Partial<Auction>, token?: string): Promise<{
@@ -710,6 +890,44 @@ export const auctionAPI = {
     }
   },
 
+  async fetchAuctionById_Admin(id: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auction/admin/view/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auction',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auction fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auction by ID error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+
   async fetchAuctionsByCategory(
     filter: string,
     token?: string
@@ -838,45 +1056,43 @@ export const auctionAPI = {
     }
   },
 
-  // async fetchAuctionsByCategor(
-  //   filter: string,
-  //   token?: string
-  // ): Promise<{
-  //   success: boolean;
-  //   message: string;
-  //   data?: Auction[];
-  //   errors?: Record<string, string[]>;
-  // }> {
-  //    try {
-  //     const response = await fetch(`${API_BASE_URL}/auction/user/fetch_autcions_cards`, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Accept': 'application/json',
-  //         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-  //       },
-  //     });
+  async declareWinner(auctionId: number, userId: number, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auction/admin/set/${auctionId}/winner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
 
-  //     const result = await response.json();
-  //     if (!response.ok) {
-  //       return {
-  //         success: false,
-  //         message: result.message || result.error || 'Failed to fetch auctions',
-  //         errors: result.errors || {},
-  //       };
-  //     }
-  //     return {
-  //       success: true,
-  //       message: result.message || 'Auctions fetched successfully',
-  //       data: result.data,
-  //     };
-  //   } catch (error) {
-  //     console.error('Fetch auctions error:', error);
-  //     return {
-  //       success: false,
-  //       message: 'Network error. Please check your connection and try again.',
-  //       errors: {},
-  //     };
-  //   }
-  // },
-
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to declare winner',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Winner declared successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Declare winner error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
 }

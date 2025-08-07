@@ -39,11 +39,16 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { adminAPI, Auction, auctionAPI } from "@/lib/api";
+import { adminAPI, Auction, auctionAPI, Bidder, BiddersResponse } from "@/lib/api";
 import { getCookie } from "@/lib/utils";
+
+// Add API_BASE_URL for debugging
+const API_BASE_URL = 'https://affliate.rosymaxpharmacy.com/api';
 import { log } from "node:console";
 import { useAuctionStatus } from "./ActiveAuction";
 import AuctionTimer from "./AuctionTimer";
+// @ts-ignore
+import confetti from 'canvas-confetti';
 
 interface Bid {
   id: number;
@@ -53,7 +58,7 @@ interface Bid {
   isAutoBid?: boolean;
 }
 
-const AuctionDetails = () => {
+const AuctionDetailsAdmins = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -70,17 +75,24 @@ const AuctionDetails = () => {
   const [showAutoBidPanel, setShowAutoBidPanel] = useState(false);
    const [startHours, setStartHours] = useState(0);
   const [endHours, setEndHours] = useState(0);
+  const [declaringWinner, setDeclaringWinner] = useState<number | null>(null);
+  const [biddersData, setBiddersData] = useState<BiddersResponse | null>(null);
+  const [biddersLoading, setBiddersLoading] = useState(false);
 
   useEffect(() => {
     const updateCountdown = () => {
       const getHoursRemaining = (targetTime: string) => {
         const now = new Date();
         const target = new Date(targetTime);
-        return (target - now) / (1000 * 60 * 60);
+        return (target.getTime() - now.getTime()) / (1000 * 60 * 60);
       };
 
-      setStartHours(getHoursRemaining(auction?.auction_start_time));
-      setEndHours(getHoursRemaining(auction?.auction_end_time));
+      if (auction?.auction_start_time) {
+        setStartHours(getHoursRemaining(auction.auction_start_time));
+      }
+      if (auction?.auction_end_time) {
+        setEndHours(getHoursRemaining(auction.auction_end_time));
+      }
     };
 
     updateCountdown();
@@ -103,25 +115,28 @@ const AuctionDetails = () => {
       if (!token || !id) return;
 
       try {
-        const result = await auctionAPI.fetchAuctionById(id, token);
-        if (result && result.data && result.data.auction) {
-          const apiAuction = result.data.auction;
+        const result = await auctionAPI.fetchAuctionById_Admin(Number(id), token);
+        if (result && result.data) {
+          // Handle both possible response structures
+          const apiAuction = (result.data as any).auction || result.data;
           // Parse promotional_tags if it's a stringified array
           let tags: string[] = [];
           try {
             tags = apiAuction.promotional_tags
-              ? JSON.parse(apiAuction.promotional_tags)
+              ? (typeof apiAuction.promotional_tags === 'string' 
+                  ? JSON.parse(apiAuction.promotional_tags) 
+                  : apiAuction.promotional_tags)
               : [];
           } catch {
             tags = [];
           }
-          // Debug logging
-          console.log("AuctionDetails - API Auction data:", apiAuction);
-          console.log("AuctionDetails - API Auction media:", apiAuction.media);
-          console.log("AuctionDetails - First media item:", apiAuction.media?.[0]);
-          console.log("AuctionDetails - Media URL:", apiAuction.media?.[0]?.media_url);
+                     // Debug logging
+           console.log("API Auction data:", apiAuction);
+           console.log("API Auction media:", apiAuction.media);
+           console.log("First media item:", apiAuction.media?.[0]);
+           console.log("Media URL:", apiAuction.media?.[0]?.media_url);
 
-          const auctionObject = {
+           const auctionObject = {
             id: apiAuction.id,
             title: apiAuction.title,
             description: apiAuction.description,
@@ -130,34 +145,34 @@ const AuctionDetails = () => {
             bid_increment: isNaN(Number(apiAuction.bid_increment)) ? 100 : Number(apiAuction.bid_increment),
             auction_start_time: apiAuction.auction_start_time,
             auction_end_time: apiAuction.auction_end_time,
-            media: apiAuction.media || [], // Include the media array
+             media: apiAuction.media || [], // Include the media array
             media_url: apiAuction.media_url || "",
             watchers: apiAuction.watchers || 0,
             promotional_tags: tags,
             auto_extend: apiAuction.auto_extend,
             featured: apiAuction.featured,
             status: apiAuction.status,
-            current_bid: result.data.highest_bid ? Number(result.data.highest_bid) : Number(apiAuction.starting_bid),
-            user: apiAuction.creator
+            current_bid: apiAuction.highest_bid ? Number(apiAuction.highest_bid) : Number(apiAuction.starting_bid),
+            user: (apiAuction as any).creator
               ? {
-                  id: apiAuction.creator.id,
-                  name: apiAuction.creator.name,
-                  email: apiAuction.creator.email,
-                  role: apiAuction.creator.role || "seller",
+                  id: (apiAuction as any).creator.id,
+                  name: (apiAuction as any).creator.name,
+                  email: (apiAuction as any).creator.email,
+                  role: (apiAuction as any).creator.role || "seller",
                 }
               : { id: 0, name: "Unknown", email: "", role: "seller" },
-          } as Auction;
+           } as Auction;
 
-          console.log("AuctionDetails - Setting auction object:", auctionObject);
-          console.log("AuctionDetails - Auction media in object:", auctionObject.media);
-          console.log("AuctionDetails - First media in object:", auctionObject.media?.[0]);
+           console.log("Setting auction object:", auctionObject);
+           console.log("Auction media in object:", auctionObject.media);
+           console.log("First media in object:", auctionObject.media?.[0]);
 
-          setAuction(auctionObject);
+           setAuction(auctionObject);
 
           // Set bid history if available
-          if (apiAuction.bids && Array.isArray(apiAuction.bids)) {
+          if ((apiAuction as any).bids && Array.isArray((apiAuction as any).bids)) {
             setBidHistory(
-              apiAuction.bids.map((b: any, idx: number) => ({
+              (apiAuction as any).bids.map((b: any, idx: number) => ({
                 id: b.id || idx,
                 bidder: b.bidder_name || "Bidder",
                 bid_amount: Number(b.bid_amount),
@@ -183,6 +198,9 @@ const AuctionDetails = () => {
 
     getAuctionDetails();
   }, [id, toast]);
+
+  // console.log("Fetched auction result:", result);
+
 
   // Update countdown timer
   useEffect(() => {
@@ -228,6 +246,8 @@ const AuctionDetails = () => {
     }
   };
 
+
+
 const isAuctionActive = (startTime, endTime) => {
   if (!startTime || !endTime) return false;
 
@@ -240,6 +260,19 @@ const isAuctionActive = (startTime, endTime) => {
 
 const active = isAuctionActive(auction?.auction_start_time, auction?.auction_end_time);
 console.log('Auction Active:', active);
+
+const [errorStates, setErrorStates] = useState({});
+
+const getInitials = (fullName) =>
+  fullName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+
+const handleImageError = (index) => {
+  setErrorStates((prev) => ({ ...prev, [index]: true }));
+};
 
 
 
@@ -310,7 +343,7 @@ console.log('Auction Active:', active);
         const newBid: Bid = {
           id: bidHistory.length + 1,
           bidder: "You",
-          bid_amount: <a href="#">{bid_amount}</a>,
+          bid_amount: bid_amount,
           time: new Date().toISOString(),
         };
         setBidHistory([newBid, ...bidHistory]);
@@ -335,38 +368,40 @@ console.log('Auction Active:', active);
     }
   };
 
-  const handleSetupAutoBid = async () => {
-    if (!auction || maxAutoBid <= 0) return;
+  // const handleSetupAutoBid = async () => {
+  //   if (!auction || maxAutoBid <= 0) return;
     
-    const currentBid = auction.current_bid || auction.starting_bid;
+  //   const currentBid = auction.current_bid || auction.starting_bid;
     
-    if (maxAutoBid <= currentBid) {
-      toast({
-        title: "Invalid Auto-Bid",
-        description: `Auto-bid maximum must be higher than current bid of $${currentBid.toLocaleString()}`,
-        variant: "destructive",
-      });
-      return;
-    }
+  //   if (maxAutoBid <= currentBid) {
+  //     toast({
+  //       title: "Invalid Auto-Bid",
+  //       description: `Auto-bid maximum must be higher than current bid of $${currentBid.toLocaleString()}`,
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+  //   try {
+  //     // Simulate API call
+  //     await new Promise(resolve => setTimeout(resolve, 500));
       
-      setAutoBidEnabled(true);
-      toast({
-        title: "Auto-Bid Activated!",
-        description: `Auto-bid set up to $${maxAutoBid.toLocaleString()}`,
-      });
+  //     setAutoBidEnabled(true);
+  //     toast({
+  //       title: "Auto-Bid Activated!",
+  //       description: `Auto-bid set up to $${maxAutoBid.toLocaleString()}`,
+  //     });
       
-    } catch (error) {
-      toast({
-        title: "Auto-Bid Setup Failed",
-        description: "Failed to set up auto-bid. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  //   } catch (error) {
+  //     toast({
+  //       title: "Auto-Bid Setup Failed",
+  //       description: "Failed to set up auto-bid. Please try again.",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // };
+
+
 
   const handleToggleWatch = () => {
     setIsWatching(!isWatching);
@@ -386,6 +421,133 @@ console.log('Auction Active:', active);
     });
   };
 
+  const handleDeclareWinner = async (bidderId: number) => {
+    setDeclaringWinner(bidderId);
+    
+    try {
+      const token = getCookie('token');
+      if (!token || !id) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to declare a winner.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Find the bidder to get the user_id
+      const winner = biddersData?.bidders.find(bidder => bidder?.bidder_id === bidderId);
+      
+      if (!winner) {
+        toast({
+          title: "Error",
+          description: "Bidder not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+             // Call the API to declare winner
+       console.log('Declaring winner with data:', {
+         auctionId: Number(id),
+         userId: winner?.user_id,
+         winnerName: winner.name,
+         winnerEmail: winner.email,
+         bidderId: bidderId
+       });
+       
+       // Validate user_id exists
+       if (!winner?.user_id) {
+         toast({
+           title: "Error",
+           description: "Invalid user ID. Cannot declare winner.",
+           variant: "destructive",
+         });
+         return;
+       }
+      
+             console.log('Sending request to backend:', {
+         url: `${API_BASE_URL}/auction/admin/set/${Number(id)}/winner`,
+         method: 'POST',
+         body: { 
+           user_id: winner.user_id,
+           bidder_id: bidderId 
+         },
+         headers: {
+           'Content-Type': 'application/json',
+           'Accept': 'application/json',
+           'Authorization': `Bearer ${token}`
+         }
+       });
+       
+       // Call the API with both user_id and bidder_id
+       const response = await fetch(`${API_BASE_URL}/auction/admin/set/${Number(id)}/winner`, {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+           'Accept': 'application/json',
+           'Authorization': `Bearer ${token}`
+         },
+         body: JSON.stringify({ 
+           user_id: winner.user_id,
+           bidder_id: bidderId 
+         })
+       });
+       
+       const result = await response.json();
+      
+             if (response.ok && result.status === "success") {
+         // Trigger confetti with more celebration
+         confetti({
+           particleCount: 150,
+           spread: 90,
+           origin: { y: 0.6 },
+           colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
+           shapes: ['circle', 'square'],
+           gravity: 0.8,
+           ticks: 200
+         });
+         
+         // Get winner details from the response
+         const winnerData = result.data;
+         
+         toast({
+           title: "🏆 Winner Successfully Declared!",
+           description: `${winnerData.winner_name} (${winnerData.winner_email}) has been officially declared the winner of Auction #${winnerData.auction_id}. The auction has been successfully concluded.`,
+         });
+         
+         // Log the complete winner details
+         console.log('Winner declared successfully:', {
+           auctionId: winnerData.auction_id,
+           winnerId: winnerData.winner_id,
+           winnerName: winnerData.winner_name,
+           winnerEmail: winnerData.winner_email,
+           winnerType: winnerData.winner_type
+         });
+         
+         // Optionally refresh the bidders data to show updated status
+         // You could add a winner status to the bidders data if needed
+         
+       } else {
+         console.error('Backend error response:', result);
+         toast({
+           title: "Failed to Declare Winner",
+           description: result.message || result.errors?.join(', ') || "Failed to declare winner. Please try again.",
+           variant: "destructive",
+         });
+       }
+    } catch (error) {
+      console.error('Error declaring winner:', error);
+      toast({
+        title: "Error",
+        description: "Failed to declare winner. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeclaringWinner(null);
+    }
+  };
+
 
 
 useEffect(() => {
@@ -394,7 +556,7 @@ useEffect(() => {
     if (!token || !id) return;
 
     try {
-      const result = await auctionAPI.fetchBidsByAuctionId(id, token); // pass token
+      const result = await auctionAPI.fetchBidsByAuctionId(Number(id), token); // pass token
       console.log("Fetched bids:", result);
       setBidData(result.data || {});
     } catch (error) {
@@ -405,25 +567,45 @@ useEffect(() => {
   getBids();
 }, [id]);
 
+// Fetch bidders data
+useEffect(() => {
+  const fetchBidders = async () => {
+    const token = getCookie('token');
+    if (!token || !id) return;
+
+    setBiddersLoading(true);
+    try {
+      const result = await adminAPI.fetchAuctionById_bidders(Number(id), token);
+      if (result.success && result.data) {
+        setBiddersData(result.data);
+      } else {
+        console.error('Failed to fetch bidders:', result.message);
+        toast({
+          title: "Error",
+          description: "Failed to load bidders data.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching bidders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load bidders data.",
+        variant: "destructive",
+      });
+    } finally {
+      setBiddersLoading(false);
+    }
+  };
+
+  fetchBidders();
+}, [id, toast]);
+
 console.log("Bid Data:", bidData);
 console.log("Auction media:", auction);
 // console.log("First media URL:", auction.media?.[0]?.media_url);
 
-useEffect(() => {
-  const getAuctionDetails = async () => {
-    const token = getCookie('token');
-    if (!token || !id) return;
-
-    try {
-      const result = await auctionAPI.fetchAuctionById(id, token); // pass token
-      console.log("Fetched auction details:", result);
-    } catch (error) {
-      console.error("Error fetching auction details:", error);
-    }
-  };
-
-  getAuctionDetails();
-}, [id]);
+// Remove the duplicate getAuctionDetails function - we already have one above
 
 
   if (loading) {
@@ -443,9 +625,9 @@ useEffect(() => {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Auction Not Found</h1>
           <p className="text-muted-foreground mb-4">The requested auction could not be found.</p>
-          <Button onClick={() => navigate("/auction")}>
+          <Button onClick={() => navigate("/admin-dashboard")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Auctions
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -461,15 +643,15 @@ useEffect(() => {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       {/* Header */}
       <header className="bg-card/50 backdrop-blur-sm border-b border-border/50 px-4 sm:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
               variant="ghost" 
-              onClick={() => navigate("/auction")}
+              onClick={() => navigate("/admin-dashboard")}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Auctions
+              Back to Dashboard
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -490,7 +672,7 @@ useEffect(() => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className=" mx-auto p-4 sm:p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -502,7 +684,7 @@ useEffect(() => {
                     <div className="flex items-center gap-3 mb-2">
                       <CardTitle className="text-3xl">{auction.title}</CardTitle>
                       <Badge variant={getStatusVariant(auctionStatus) as any} className="text-sm">
-                        {auctionStatus}
+                        {auctionStatus}  
                       </Badge>
                     </div>
                     <p className="text-muted-foreground text-sm mb-2">
@@ -516,23 +698,23 @@ useEffect(() => {
               </CardHeader>
               <CardContent>
                 {/* Product Image */}
-                {(() => {
-                  console.log("AuctionDetails - Rendering media section - auction:", auction);
-                  console.log("AuctionDetails - Rendering media section - auction.media:", auction.media);
-                  console.log("AuctionDetails - Rendering media section - auction.media.length:", auction.media?.length);
-                  console.log("AuctionDetails - Rendering media section - first media item:", auction.media?.[0]);
-                  console.log("AuctionDetails - Rendering media section - media_url:", auction.media?.[0]?.media_url);
-                  
-                  return auction.media && auction.media.length > 0 ? (
+                 {(() => {
+                   console.log("Rendering media section - auction:", auction);
+                   console.log("Rendering media section - auction.media:", auction.media);
+                   console.log("Rendering media section - auction.media.length:", auction.media?.length);
+                   console.log("Rendering media section - first media item:", auction.media?.[0]);
+                   console.log("Rendering media section - media_url:", auction.media?.[0]?.media_url);
+                   
+                   return auction.media && auction.media.length > 0 ? (
   <div className="aspect-video w-full rounded-lg overflow-hidden border mb-6">
     <img 
       src={auction.media[0].media_url}
       alt={auction.title}
       className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error("AuctionDetails - Image failed to load:", e);
-                          e.currentTarget.style.display = 'none';
-                        }}
+                         onError={(e) => {
+                           console.error("Image failed to load:", e);
+                           e.currentTarget.style.display = 'none';
+                         }}
     />
   </div>
 ) : (
@@ -542,8 +724,8 @@ useEffect(() => {
       <p className="text-muted-foreground">No image available</p>
     </div>
   </div>
-                  );
-                })()}
+                   );
+                 })()}
 
                 {/* Promotional Tags */}
                 {auction.promotional_tags && auction.promotional_tags.length > 0 && (
@@ -737,192 +919,7 @@ useEffect(() => {
             </Card>
 
             {/* Bidding Panel */}
-            {isAuctionActive && (
-              <Card className="shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Gavel className="h-5 w-5 text-primary" />
-                    Place Your Bid
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bidAmount">Bid Amount</Label>
-                    <div className="flex gap-2">
-              <input
-  type="number"
-  min={auction.current_bid || auction.starting_bid}
-  value={bid_amount}
-  onChange={(e) => setAmount(Number(e.target.value))}
-  className="border rounded px-3 py-2 w-full text-black"
-  placeholder="Enter your bid amount"
-/>
-
-                      <Button
-                        variant="outline"
-                        onClick={handleIncrementBid}
-                        className="gap-1"
-                      >
-                        <Plus className="h-4 w-4" />
-                        ${auction.bid_increment}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Minimum bid: ${minNextBid.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <Button 
-                    onClick={handlePlaceBid}
-                    disabled={bidLoading || bid_amount < minNextBid}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {bidLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Placing Bid...
-                      </>
-                    ) : (
-                      <>
-                        <Gavel className="h-4 w-4 mr-2" />
-                        Place Bid ${bid_amount.toLocaleString()}
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-      <div className="mb-4">
-  <input
-    type="checkbox"
-    id="autoBidToggle"
-    checked={showAutoBidPanel}
-    onChange={() => setShowAutoBidPanel((prev) => !prev)}
-    className="mr-2"
-  />
-  <label htmlFor="autoBidToggle" className="text-sm font-medium">
-    Enable Auto-Bid
-  </label>
-</div>
-
-            {/* Auto-Bid Panel */}
-            {showAutoBidPanel && (
-              <Card className="shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-primary" />
-                    Auto-Bid
-                  </CardTitle>
-                  <CardDescription>
-                    Set a maximum bid and let the system bid for you automatically
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {autoBidEnabled ? (
-                    <div className="text-center p-4 bg-primary/10 rounded-lg">
-                      <Zap className="h-8 w-8 text-primary mx-auto mb-2" />
-                      <p className="font-medium text-primary">Auto-Bid Active</p>
-                      <p className="text-sm text-muted-foreground">
-                        Maximum: ${maxAutoBid.toLocaleString()}
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAutoBidEnabled(false)}
-                        className="mt-2"
-                      >
-                        Disable Auto-Bid
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="maxAutoBid">Maximum Auto-Bid Amount</Label>
-                        <Input
-                          id="maxAutoBid"
-                          type="number"
-                          value={maxAutoBid}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={currentBid + auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="Enter maximum bid_amount"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The system will automatically bid up to this bid_amount
-                        </p>
-                      </div>
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="maxAutoBid">Maximum Auto-Bid Amount</Label>
-                        <Input
-                          id="maxAutoBid"
-                          type="number"
-                          value={maxAutoBid}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={currentBid + auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="Enter maximum bid_amount"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The system will automatically bid up to this bid_amount
-                        </p>
-                      </div> */}
-
-                      <div className="space-y-2">
-                        <Label htmlFor="maxAutoBid" className="text-sm font-medium">
-                          Max Bid Limit
-                        </Label>
-                        <Input
-                          id="maxAutoBid"
-                          type="number"
-                          value={maxAutoBid || ''}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={currentBid + auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="e.g. 20,000"
-                          className="text-lg"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The total bid_amount you're willing to spend on this auction.
-                        </p>
-                      </div>
-
-                      {/* Bid Step Amount */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bidStepAmount" className="text-sm font-medium">
-                          Bid Step Amount
-                        </Label>
-                        <Input
-                          id="bidStepAmount"
-                          type="number"
-                          value={'bidStepAmount' in window ? bidStepAmount : auction.bid_increment}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="e.g. 500"
-                          className="text-lg"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The bid_amount the system will automatically bid on your behalf when you're outbid.
-                        </p>
-                      </div>
-
-                      <Button 
-                        onClick={handleSetupAutoBid}
-                        disabled={maxAutoBid <= currentBid}
-                        variant="outline"
-                        className="w-full gap-2"
-                      >
-                        <Zap className="h-4 w-4" />
-                        Setup Auto-Bid
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
+            
             {/* Auction Ended */}
             {!isAuctionActive && (
               <Card className="shadow-lg border-0">
@@ -942,9 +939,113 @@ useEffect(() => {
             )}
           </div>
         </div>
-      </div>
+
+                 {/* Bidders List Card */}
+         <Card className="shadow-lg border-0">
+           <CardHeader>
+                           <CardTitle className="text-xl flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Auction Bidders ({biddersData?.total_bidders || 0})
+              </CardTitle>
+             <CardDescription>
+               All participants who have placed bids on this auction
+             </CardDescription>
+           </CardHeader>
+           <CardContent>
+             {biddersLoading ? (
+               <div className="flex items-center justify-center py-8">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                 <span className="ml-2 text-muted-foreground">Loading bidders...</span>
+               </div>
+                           ) : biddersData?.bidders && biddersData.bidders.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {biddersData.bidders.map((bidder) => (
+                                 <Card key={bidder.bidder_id} className="border border-border/50 hover:border-primary/50 transition-colors">
+                   <CardContent className="p-4">
+                     <div className="flex items-start gap-3">
+                       {/* Avatar */}
+                       <div className="relative">
+                       <div className="flex gap-4 flex-wrap">
+                       <div className="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold text-sm">
+                    {getInitials(bidder.name)}
+                  </div>
+                          </div>
+                         {/* <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1">
+                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                           </svg>
+                         </div> */}
+                       </div>
+
+                       {/* Bidder Info */}
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-center justify-between mb-1">
+                           <h4 className="font-semibold text-sm truncate">{bidder.name}</h4>
+                           <Badge variant="default" className="text-xs">
+                             {bidder.bidder_type}
+                           </Badge>
+                         </div>
+                         
+                         <p className="text-xs text-muted-foreground mb-2">{bidder.email}</p>
+                         
+                         <div className="space-y-1">
+                           <div className="flex justify-between text-xs">
+                             <span className="text-muted-foreground">Highest Bid:</span>
+                             <span className="font-semibold text-primary">${Number(bidder.highest_bid_by_bidder).toLocaleString()}</span>
+                           </div>
+                           <div className="flex justify-between text-xs">
+                             <span className="text-muted-foreground">Total Bids:</span>
+                             <span className="font-medium">{bidder.total_bids}</span>
+                           </div>
+                           <div className="flex justify-between text-xs">
+                             <span className="text-muted-foreground">User ID:</span>
+                             <span className="font-medium">{bidder.user_id}</span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+
+                     {/* Declare Winner Button */}
+                     <div className="mt-4 pt-3 border-t border-border/50">
+                       <Button
+                         onClick={() => handleDeclareWinner(bidder.bidder_id)}
+                         disabled={declaringWinner === bidder.bidder_id}
+                         className="w-full"
+                         variant="outline"
+                         size="sm"
+                       >
+                                                  {declaringWinner === bidder.bidder_id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                            Declaring Winner...
+                          </>
+                        ) : (
+                          <>
+                            <Trophy className="h-4 w-4 mr-2" />
+                            Declare Winner
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-medium mb-1">No bidders yet</h3>
+              <p className="text-sm text-muted-foreground">
+                No one has placed bids on this auction yet
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  </div>
   );
 };
 
-export default AuctionDetails;
+export default AuctionDetailsAdmins;
+

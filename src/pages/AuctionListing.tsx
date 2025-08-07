@@ -133,6 +133,29 @@ const AuctionListing = () => {
     .sort((a, b) => {
       const auctionA = getAuctionObj(a);
       const auctionB = getAuctionObj(b);
+      
+      // First, sort by status priority: upcoming > active > ending_soon > ended
+      const getStatusPriority = (status: string) => {
+        switch (status) {
+          case 'upcoming': return 0;
+          case 'active': return 1;
+          case 'ending_soon': return 2;
+          case 'ended': return 3;
+          default: return 4;
+        }
+      };
+      
+      const statusA = getAuctionStatus(a);
+      const statusB = getAuctionStatus(b);
+      const priorityA = getStatusPriority(statusA);
+      const priorityB = getStatusPriority(statusB);
+      
+      // If statuses are different, sort by priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If statuses are the same, apply the selected sort criteria
       switch (sortBy) {
         case "ending_soon":
           return new Date(auctionA.auction_end_time).getTime() - new Date(auctionB.auction_end_time).getTime();
@@ -145,7 +168,12 @@ const AuctionListing = () => {
         case "most_watched":
           return getWatchers(b) - getWatchers(a);
         default:
-          return 0;
+          // Default sorting: upcoming auctions by start time (earliest first)
+          if (statusA === 'upcoming' && statusB === 'upcoming') {
+            return new Date(auctionA.auction_start_time).getTime() - new Date(auctionB.auction_start_time).getTime();
+          }
+          // For other statuses, sort by end time (earliest first)
+          return new Date(auctionA.auction_end_time).getTime() - new Date(auctionB.auction_end_time).getTime();
       }
     });
 
@@ -164,9 +192,15 @@ const AuctionListing = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
+        <div className="flex justify-between items-center">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">All Auctions</h1>
           <p className="text-muted-foreground text-lg">Discover and bid on amazing items from verified sellers</p>
+        </div>
+
+        <Button size="sm" asChild className="shadow-elegant">
+            <Link to="/user-dashboard">Go to Dashboard</Link>
+          </Button>
         </div>
 
         {/* Search and Filters */}

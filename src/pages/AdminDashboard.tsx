@@ -51,8 +51,10 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [userName, setUserName] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  // Remove imageInputMode and imageUrls state
+  // Only allow file uploads
   const [auctionFormData, setAuctionFormData] = useState<CreateAuctionData>({
-    name: "", // Add this field
+    title: "",
     description: "",
     auction_start_time: "",
     auction_end_time: "",
@@ -62,11 +64,16 @@ const AdminDashboard = () => {
     auto_extend: false,
     featured: false,
     promotional_tags: ["", "", ""],
-    images: [],
+    media: [],
   });
   const [isCreatingAuction, setIsCreatingAuction] = useState(false);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loadingAuctions, setLoadingAuctions] = useState(true);
+  const [currentBids, setCurrentBids] = useState<Record<number, number>>({});
+  const [loadingBids, setLoadingBids] = useState<Record<number, boolean>>({});
+  // Remove imageInputMode and imageUrls state
+  // Only allow file uploads
+  const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -240,7 +247,7 @@ const AdminDashboard = () => {
     starting_bid,
     reserve_price,
     promotional_tags,
-    images,
+    media,
     ...rest
   } = auctionFormData;
 
@@ -272,17 +279,23 @@ const AdminDashboard = () => {
   try {
     const token = getCookie("token");
 
-    // ✅ Clean the images (remove empty strings/nulls)
-    const cleanedImages = Array.isArray(images)
-      ? images.filter(img => !!img)
-      : [images].filter(img => !!img);
+    // Convert all File objects in media to base64 strings
+    const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const base64Media = Array.isArray(media)
+      ? await Promise.all(media.filter(f => f instanceof File).map(fileToBase64))
+      : [];
 
-    // ✅ Clean promotional_tags (remove empty tags)
+    // Clean promotional_tags (remove empty tags)
     const cleanedTags = Array.isArray(promotional_tags)
       ? promotional_tags.filter(tag => tag && tag.trim() !== "")
       : [];
 
-    // ✅ Build the final JSON payload
+    // Build the final payload
     const payload = {
       ...rest,
       auction_start_time,
@@ -290,11 +303,11 @@ const AdminDashboard = () => {
       starting_bid: Number(starting_bid),
       reserve_price: Number(reserve_price),
       bid_increment: Number(bid_increment),
-      images: cleanedImages,
+      media: base64Media, // base64 strings
       promotional_tags: cleanedTags,
     };
 
-    // ✅ Send JSON payload
+    // Send payload as JSON
     const response = await adminAPI.createAuction(payload, token || undefined);
 
     if (response.success) {
@@ -302,10 +315,8 @@ const AdminDashboard = () => {
         title: "Auction Created Successfully!",
         description: response.message || "New auction has been created successfully.",
       });
-
-      // ✅ Reset form
       setAuctionFormData({
-        name: "",
+        title: "",
         description: "",
         auction_start_time: "",
         auction_end_time: "",
@@ -315,7 +326,7 @@ const AdminDashboard = () => {
         auto_extend: false,
         featured: false,
         promotional_tags: ["", "", ""],
-        images: [],
+        media: [],
       });
     } else {
       toast({
@@ -363,10 +374,47 @@ const AdminDashboard = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setAuctionFormData(prev => ({ ...prev, images: filesArray }));
+      // Only allow File objects
+      const filesArray = Array.from(e.target.files).filter(f => f instanceof File);
+      setAuctionFormData(prev => ({ ...prev, media: filesArray }));
     }
   };
+
+  // Remove handleImageUrlChange
+  // const handleImageUrlChange = (index: number, value: string) => {
+  //   const newUrls = [...imageUrls];
+  //   newUrls[index] = value;
+  //   setImageUrls(newUrls);
+  // };
+
+  // Add helper at the top-level of the component
+  const getCurrentBid = (auction: Auction) => {
+    // Since the API doesn't return highest_bid or current_bid,
+    // we'll show the starting bid for now
+    // TODO: Backend needs to include bid history or current highest bid
+    if (auction.highest_bid) return Number(auction.highest_bid);
+    if (auction.current_bid) return Number(auction.current_bid);
+    if (auction.starting_bid) return Number(auction.starting_bid);
+    return 0;
+  };
+
+  // Function to fetch current bid data for an auction
+  // const fetchCurrentBid = async (auctionId: number) => {
+  //   try {
+  //     const result = await adminAPI.fetchBidsByAuctionId(auctionId, token);
+  //     if (result.success && result.data && result.data.length > 0) {
+  //       // Get the highest bid from the bid history
+  //       const highestBid = Math.max(...result.data.map((bid: any) => Number(bid.bid_amount)));
+  //       return highestBid;
+  //     }
+  //     return null;
+  //   } catch (error) {
+  //     console.error('Error fetching current bid:', error);
+  //     return null;
+  //   }
+  // };
+
+  
 
   return (
     <SidebarProvider>
@@ -575,7 +623,7 @@ const AdminDashboard = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Upload Images (Max 4)</Label>
+                      <Label>Images</Label>
                       <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                         <FileImage className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -586,9 +634,9 @@ const AdminDashboard = () => {
                           onChange={handleImageChange}
                           className="max-w-xs mx-auto"
                         />
-                        {auctionFormData.images.length > 0 && (
+                        {auctionFormData.media.length > 0 && (
                           <p className="text-sm text-muted-foreground mt-2">
-                            {auctionFormData.images.length} image(s) selected
+                            {auctionFormData.media.length} image(s) selected
                           </p>
                         )}
                       </div>
@@ -718,9 +766,10 @@ const AdminDashboard = () => {
                             <TableHead className="min-w-[300px] px-6 py-4 font-semibold">Item Details</TableHead>
                             <TableHead className="min-w-[120px] px-4 py-4 font-semibold">Created By</TableHead>
                             <TableHead className="min-w-[120px] px-4 py-4 font-semibold">Starting Bid</TableHead>
+                            {/* <TableHead className="min-w-[100px] px-4 py-4 font-semibold">Current Bid*</TableHead> */}
                             <TableHead className="min-w-[100px] px-4 py-4 font-semibold">Start</TableHead>
                             <TableHead className="min-w-[100px] px-4 py-4 font-semibold">End</TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 font-semibold text-center">Stage</TableHead>
+                            <TableHead className="min-w-[100px] px-4 py-4 font-semibold text-center">Status</TableHead>
                             <TableHead className="min-w-[120px] px-6 py-4 font-semibold text-center">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -745,6 +794,9 @@ const AdminDashboard = () => {
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
                                   <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                                </TableCell>
+                                <TableCell className="px-4 py-4">
+                                  <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
                                 </TableCell>
                                 <TableCell className="px-4 py-4">
                                   <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
@@ -779,9 +831,9 @@ const AdminDashboard = () => {
                               >
                                 <TableCell className="px-6 py-4">
                                   <div className="flex items-center gap-3">
-                                    {auction.media_url ? (
+                                    {auction.media && auction.media.length > 0 && auction.media[0].media_url ? (
                                       <img 
-                                        src={auction.media_path} 
+                                        src={auction.media[0].media_url} 
                                         alt={auction.title}
                                         className="w-12 h-12 object-cover rounded-lg border shadow-sm"
                                         onError={(e) => {
@@ -809,6 +861,11 @@ const AdminDashboard = () => {
                                     ${auction.starting_bid.toLocaleString()}
                                   </span>
                                 </TableCell>
+                                {/* <TableCell className="px-4 py-4">
+                                  <span className="font-semibold text-foreground">
+                                    ${getCurrentBid(auction).toLocaleString()}
+                                  </span>
+                                </TableCell> */}
                                 <TableCell className="px-4 py-4">
                                   <div className="text-sm">
                                     <div className="font-medium">
@@ -847,7 +904,7 @@ const AdminDashboard = () => {
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => navigate(`/auction-details/${auction.id}`)}
+                                    onClick={() => navigate(`/auction-details/admin/${auction.id}`)}
                                     className="gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
                                   >
                                     <Eye className="h-4 w-4" />
@@ -860,6 +917,9 @@ const AdminDashboard = () => {
                           )}
                         </TableBody>
                       </Table>
+                    </div>
+                    <div className="px-6 py-3 text-xs text-muted-foreground border-t">
+                      * Currently showing starting bid. Backend needs to include current highest bid data.
                     </div>
                   </CardContent>
                 </Card>
