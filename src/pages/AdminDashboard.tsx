@@ -159,75 +159,183 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleCreateAuction = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // const handleCreateAuction = async (e: React.FormEvent) => {
+  //   e.preventDefault();
     
-    // Validate bid increment
-    if (auctionFormData.bid_increment <= 0 || isNaN(auctionFormData.bid_increment)) {
-      toast({
-        title: "Invalid Bid Increment",
-        description: "Bid increment must be greater than zero.",
-        variant: "destructive",
-      });
-      return;
-    }
+  //   // Validate bid increment
+  //   if (auctionFormData.bid_increment <= 0 || isNaN(auctionFormData.bid_increment)) {
+  //     toast({
+  //       title: "Invalid Bid Increment",
+  //       description: "Bid increment must be greater than zero.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
     
-    // Validate auction end time is after start time
-    const startTime = new Date(auctionFormData.auction_start_time);
-    const endTime = new Date(auctionFormData.auction_end_time);
+  //   // Validate auction end time is after start time
+  //   const startTime = new Date(auctionFormData.auction_start_time);
+  //   const endTime = new Date(auctionFormData.auction_end_time);
     
-    if (endTime <= startTime) {
-      toast({
-        title: "Invalid Auction End Time",
-        description: "The auction end time must be a date after auction start time.",
-        variant: "destructive",
-      });
-      return;
-    }
+  //   if (endTime <= startTime) {
+  //     toast({
+  //       title: "Invalid Auction End Time",
+  //       description: "The auction end time must be a date after auction start time.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
     
-    setIsCreatingAuction(true);
+  //   setIsCreatingAuction(true);
     
-    try {
-      const token = getCookie('token');
-      const response = await adminAPI.createAuction(auctionFormData, token || undefined);
+  //   try {
+  //     const token = getCookie('token');
+  //     const response = await adminAPI.createAuction(auctionFormData, token || undefined);
       
-      if (response.success) {
-        toast({
-          title: "Auction Created Successfully!",
-          description: response.message || "New auction has been created successfully.",
-        });
-        // Reset form
-        setAuctionFormData({
-          description: "",
-          auction_start_time: "",
-          auction_end_time: "",
-          starting_bid: 0,
-          reserve_price: 0,
-          bid_increment: 1,
-          auto_extend: false,
-          featured: false,
-          promotional_tags: ["", "", ""],
-          images: [],
-          name: ""
-        });
-      } else {
-        toast({
-          title: "Auction Creation Failed",
-          description: response.message || "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Auction creation error:", error);
+  //     if (response.success) {
+  //       toast({
+  //         title: "Auction Created Successfully!",
+  //         description: response.message || "New auction has been created successfully.",
+  //       });
+  //       // Reset form
+  //       setAuctionFormData({
+  //         description: "",
+  //         auction_start_time: "",
+  //         auction_end_time: "",
+  //         starting_bid: 0,
+  //         reserve_price: 0,
+  //         bid_increment: 1,
+  //         auto_extend: false,
+  //         featured: false,
+  //         promotional_tags: ["", "", ""],
+  //         images: [],
+  //         name: "",
+          
+  //       });
+  //     } else {
+  //       toast({
+  //         title: "Auction Creation Failed",
+  //         description: response.message || "Something went wrong. Please try again.",
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Auction creation error:", error);
+  //     toast({
+  //       title: "Auction Creation Failed",
+  //       description: "Network error. Please check your connection and try again.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsCreatingAuction(false);
+  //   }
+  // };
+
+  const handleCreateAuction = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const {
+    auction_start_time,
+    auction_end_time,
+    bid_increment,
+    starting_bid,
+    reserve_price,
+    promotional_tags,
+    images,
+    ...rest
+  } = auctionFormData;
+
+  // Validate bid increment
+  if (!bid_increment || Number(bid_increment) <= 0 || isNaN(Number(bid_increment))) {
+    toast({
+      title: "Invalid Bid Increment",
+      description: "Bid increment must be a number greater than zero.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Validate auction times
+  const startTime = new Date(auction_start_time);
+  const endTime = new Date(auction_end_time);
+
+  if (endTime <= startTime) {
+    toast({
+      title: "Invalid Auction End Time",
+      description: "The auction end time must be after the start time.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsCreatingAuction(true);
+
+  try {
+    const token = getCookie("token");
+
+    // ✅ Clean the images (remove empty strings/nulls)
+    const cleanedImages = Array.isArray(images)
+      ? images.filter(img => !!img)
+      : [images].filter(img => !!img);
+
+    // ✅ Clean promotional_tags (remove empty tags)
+    const cleanedTags = Array.isArray(promotional_tags)
+      ? promotional_tags.filter(tag => tag && tag.trim() !== "")
+      : [];
+
+    // ✅ Build the final JSON payload
+    const payload = {
+      ...rest,
+      auction_start_time,
+      auction_end_time,
+      starting_bid: Number(starting_bid),
+      reserve_price: Number(reserve_price),
+      bid_increment: Number(bid_increment),
+      images: cleanedImages,
+      promotional_tags: cleanedTags,
+    };
+
+    // ✅ Send JSON payload
+    const response = await adminAPI.createAuction(payload, token || undefined);
+
+    if (response.success) {
+      toast({
+        title: "Auction Created Successfully!",
+        description: response.message || "New auction has been created successfully.",
+      });
+
+      // ✅ Reset form
+      setAuctionFormData({
+        name: "",
+        description: "",
+        auction_start_time: "",
+        auction_end_time: "",
+        starting_bid: 0,
+        reserve_price: 0,
+        bid_increment: 1,
+        auto_extend: false,
+        featured: false,
+        promotional_tags: ["", "", ""],
+        images: [],
+      });
+    } else {
       toast({
         title: "Auction Creation Failed",
-        description: "Network error. Please check your connection and try again.",
+        description: response.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsCreatingAuction(false);
     }
-  };
+  } catch (error) {
+    console.error("Auction creation error:", error);
+    toast({
+      title: "Auction Creation Failed",
+      description: "Network error. Please check your connection and try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsCreatingAuction(false);
+  }
+};
+
 
   const handleInputChange = (field: keyof CreateAuctionData, value: any) => {
     // Add validation for bid_increment
@@ -342,12 +450,12 @@ const AdminDashboard = () => {
                   </DialogHeader>
                   <form onSubmit={handleCreateAuction} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Auction Name</Label>
+                      <Label htmlFor="title">Auction Title</Label>
                       <Input 
-                        id="name" 
-                        placeholder="Enter auction item name..." 
-                        value={auctionFormData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        id="title" 
+                        placeholder="Enter auction item title..." 
+                        value={auctionFormData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
                         required 
                       />
                     </div>
@@ -739,7 +847,7 @@ const AdminDashboard = () => {
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => navigate(`/admin-dashboard/auction/${auction.id}`)}
+                                    onClick={() => navigate(`/auction-details/${auction.id}`)}
                                     className="gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
                                   >
                                     <Eye className="h-4 w-4" />
