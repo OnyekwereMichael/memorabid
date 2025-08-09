@@ -36,25 +36,123 @@ const AuctionListing = () => {
   const [filterBy, setFilterBy] = useState("all");
   const [watchedItems, setWatchedItems] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    const getAuction = async () => {
-      const token = getCookie('token');
-      if (!token) return;
+  // useEffect(() => {
+  //   const getAuction = async () => {
+  //     const token = getCookie('token');
+  //     if (!token) return;
 
+  //     try {
+  //       const result = await auctionAPI.fetchAuctions(token);
+  //       // result.data is an array of { auction, total_bids, ... }
+  //       setAuctions(result.data || []);
+  //       setLoading(false);
+  //       console.log("Fetched result:", result);
+  //     } catch (error) {
+  //       setLoading(false);
+  //       console.error("Error fetching bids:", error);
+  //     }
+  //   };
+
+  //   getAuction();
+  // }, []);
+
+
+  // past acution 
+  useEffect(() => {
+    const getAuctionCategory = async () => {
+      const token = getCookie('token');
+      if (!token) {
+        console.error("No token found. User might not be logged in.");
+        return;
+      }
+  
       try {
-        const result = await auctionAPI.fetchAuctions(token);
+        const result = await auctionAPI.fetchAuctionsByCategory("past", token);
         // result.data is an array of { auction, total_bids, ... }
         setAuctions(result.data || []);
-        setLoading(false);
         console.log("Fetched result:", result);
       } catch (error) {
-        setLoading(false);
         console.error("Error fetching bids:", error);
+      } finally {
+        setLoading(false);
       }
     };
-
-    getAuction();
+  
+    getAuctionCategory();
   }, []);
+
+  // upcoming acution 
+  useEffect(() => {
+    const getAuctionCategory = async () => {
+      const token = getCookie('token');
+      if (!token) {
+        console.error("No token found. User might not be logged in.");
+        return;
+      }
+  
+      try {
+        const result = await auctionAPI.fetchAuctionsByCategory("upcoming", token);
+        // result.data is an array of { auction, total_bids, ... }
+        setAuctions(result.data || []);
+        console.log("Fetched result:", result);
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    getAuctionCategory();
+  }, []);
+
+  // live acution 
+  useEffect(() => {
+    const getAuctionCategory = async () => {
+      const token = getCookie('token');
+      if (!token) {
+        console.error("No token found. User might not be logged in.");
+        return;
+      }
+  
+      try {
+        const result = await auctionAPI.fetchAuctionsByCategory("live", token);
+        // result.data is an array of { auction, total_bids, ... }
+        setAuctions(result.data || []);
+        console.log("Fetched result:", result);
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    getAuctionCategory();
+  }, []);
+  
+  // ending acution 
+  useEffect(() => {
+    const getAuctionCategory = async () => {
+      const token = getCookie('token');
+      if (!token) {
+        console.error("No token found. User might not be logged in.");
+        return;
+      }
+  
+      try {
+        const result = await auctionAPI.fetchAuctionsByCategory(" ending_soon", token);
+        // result.data is an array of { auction, total_bids, ... }
+        setAuctions(result.data || []);
+        console.log("Fetched result:", result);
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    getAuctionCategory();
+  }, []);
+
 
   // Helper to get the auction object from the API response
   const getAuctionObj = (item: any) => item.auction || {};

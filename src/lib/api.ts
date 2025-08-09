@@ -624,6 +624,50 @@ export const adminAPI = {
       };
     }
   },
+
+  async fetchAuctionsByCategory(
+    filter: string,
+    token?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: Auction[];
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/auction/user/fetch_autcions_cards?filter=past`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to fetch auctions',
+          errors: result.errors || {},
+        };
+      }
+      return {
+        success: true,
+        message: result.message || 'Auctions fetched successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Fetch auctions by category error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
+  
   async fetchAuctionById_bidders(id: number, token?: string): Promise<{
     success: boolean;
     message: string;
