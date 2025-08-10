@@ -48,7 +48,7 @@ import { formatAuctionTime, getCookie, removeCookie } from "@/lib/utils";
 const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("auctions");
   const [userName, setUserName] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   // Remove imageInputMode and imageUrls state
@@ -74,6 +74,7 @@ const AdminDashboard = () => {
   // Remove imageInputMode and imageUrls state
   // Only allow file uploads
   const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -111,12 +112,7 @@ const AdminDashboard = () => {
   }, []);
 
   const sidebarItems = [
-    { title: "Dashboard", url: "/admin-dashboard", icon: Home },
     { title: "Auctions", url: "/admin-dashboard/auctions", icon: Gavel },
-    { title: "Seller Requests", url: "/admin-dashboard/sellers", icon: Users },
-    { title: "Flagged Items", url: "/admin-dashboard/flagged", icon: AlertTriangle },
-    { title: "Analytics", url: "/admin-dashboard/analytics", icon: BarChart3 },
-    { title: "Settings", url: "/admin-dashboard/settings", icon: Settings },
   ];
 
   const handleLogout = async () => {
@@ -328,6 +324,7 @@ const AdminDashboard = () => {
         promotional_tags: ["", "", ""],
         media: [],
       });
+      setCreateOpen(false);
     } else {
       toast({
         title: "Auction Creation Failed",
@@ -481,7 +478,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
               
-              <Dialog>
+              <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2 shadow-elegant w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
@@ -653,104 +650,11 @@ const AdminDashboard = () => {
        
           <div className="p-4 sm:p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">
-                <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
-                <TabsTrigger value="auctions" className="text-xs sm:text-sm py-2">Auctions</TabsTrigger>
-                <TabsTrigger value="sellers" className="text-xs sm:text-sm py-2 hidden sm:block">Sellers</TabsTrigger>
-                <TabsTrigger value="flagged" className="text-xs sm:text-sm py-2">Flagged</TabsTrigger>
-                <TabsTrigger value="analytics" className="text-xs sm:text-sm py-2">Analytics</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-1 h-auto">
+                <TabsTrigger value="auctions" className="text-sm py-2">Auctions</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-6">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                  <Card className="shadow-card border-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Auctions</CardTitle>
-                      <Gavel className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">{stats.totalAuctions}</div>
-                      <p className="text-xs text-muted-foreground">+12% from last month</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="shadow-card border-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Active Auctions</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">{stats.activeAuctions}</div>
-                      <p className="text-xs text-muted-foreground">Currently running</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="shadow-card border-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">{stats.pendingApprovals}</div>
-                      <p className="text-xs text-muted-foreground">Needs attention</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="shadow-card border-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">${stats.totalRevenue.toLocaleString()}</div>
-                      <p className="text-xs text-muted-foreground">+23% from last month</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="shadow-card border-0">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">New Sellers</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">{stats.newSellers}</div>
-                      <p className="text-xs text-muted-foreground">This week</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Recent Activity */}
-                <Card className="shadow-card border-0">
-                  <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Latest actions on the platform</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {[
-                        { action: "New auction created", item: "Vintage Cricket Bat", time: "2 minutes ago", type: "auction" },
-                        { action: "Seller approved", item: "Cricket Legends", time: "15 minutes ago", type: "approval" },
-                        { action: "High-value bid placed", item: "$45,000 on World Cup Bat", time: "1 hour ago", type: "bid" },
-                        { action: "Item flagged for review", item: "Suspicious signature", time: "2 hours ago", type: "flag" },
-                      ].map((activity, i) => (
-                        <div key={i} className="flex items-center space-x-4">
-                          <div className={`w-2 h-2 rounded-full ${
-                            activity.type === 'auction' ? 'bg-primary' :
-                            activity.type === 'approval' ? 'bg-success' :
-                            activity.type === 'bid' ? 'bg-warning' : 'bg-destructive'
-                          }`} />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{activity.action}</p>
-                            <p className="text-xs text-muted-foreground">{activity.item}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+              {/* Overview and other tabs removed per requirements */}
 
               <TabsContent value="auctions" className="space-y-6">
                 <Card className="shadow-card border-0">

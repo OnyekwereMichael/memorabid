@@ -4,7 +4,7 @@ import './index.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider defaultTheme="dark" storageKey="auctionpro-theme">
+  <ThemeProvider defaultTheme="light" storageKey="auctionpro-theme">
     <App />
   </ThemeProvider>
 );

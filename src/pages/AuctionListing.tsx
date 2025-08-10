@@ -26,6 +26,7 @@ import type { Auction } from "@/lib/api";
 import { getCookie, getTimeLeft } from "@/lib/utils";
 import { log } from "node:console";
 import AuctionTimer from "./AuctionTimer";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const AuctionListing = () => {
   const navigate = useNavigate();
@@ -175,7 +176,26 @@ const AuctionListing = () => {
           // For other statuses, sort by end time (earliest first)
           return new Date(auctionA.auction_end_time).getTime() - new Date(auctionB.auction_end_time).getTime();
       }
-    });
+  // Categorize by status for sections
+  const liveAuctions = filteredAndSortedAuctions.filter((item) => {
+    const auction = getAuctionObj(item);
+    const now = new Date();
+    const start = new Date(auction.auction_start_time);
+    const end = new Date(auction.auction_end_time);
+    return now >= start && now <= end;
+  });
+  const upcomingAuctions = filteredAndSortedAuctions.filter((item) => {
+    const auction = getAuctionObj(item);
+    const now = new Date();
+    const start = new Date(auction.auction_start_time);
+    return now < start;
+  });
+  const pastAuctions = filteredAndSortedAuctions.filter((item) => {
+    const auction = getAuctionObj(item);
+    const now = new Date();
+    const end = new Date(auction.auction_end_time);
+    return now > end;
+  });
 
   if (loading) {
     return (
@@ -260,172 +280,269 @@ const AuctionListing = () => {
           </div>
         </div>
 
-        {/* Auction Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          {filteredAndSortedAuctions.map((item) => {
-            const auction = getAuctionObj(item);
-            const currentBid = getCurrentBid(item);
-            const bidCount = item.total_bids || 0;
-            const timeLeft = getTimeLeft(item);
-            const auctionStatus = auction.status || getAuctionStatus(item);
-            const isWatched = watchedItems.has(auction.id);
-
-            return (
-              <Card key={auction.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg overflow-hidden">
-                <div className="relative">
-                  {/* Product Image */}
-                  <Link to={`/auction-details/${auction.id}`}>
-                    <CardHeader className="p-0">
-                      <div className="aspect-square relative overflow-hidden bg-muted">
-                       {auction.media && auction.media.length > 0 ? (
-  <img
-    src={auction.media[0].media_url}
-    alt={auction.title}
-    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-  />
-) : (
-  <div className="w-full h-full flex items-center justify-center">
-    <Gavel className="h-12 w-12 text-muted-foreground" />
-  </div>
-)}
-
-                        
-                        {/* Status Badge */}
-                        <div className="absolute top-3 left-3">
-                          {/* <Badge variant={getStatusVariant(auctionStatus) as any} className="text-xs">
-                            {auctionStatus === 'ending_soon' ? 'Ending Soon' : 
-                             auctionStatus === 'active' ? 'Live' : 
-                             auctionStatus}
-                          </Badge> */}
-                        </div>
-
-                        {/* Featured Badge */}
-                        {auction.featured && (
-                          <div className="absolute top-3 right-3">
-                            <Badge variant="secondary" className="text-xs gap-1">
-                              <Star className="h-3 w-3 fill-current" />
-                              {auction.status}
-                            </Badge>
+        {/* Live Auctions Slider */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Live Auctions</h2>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Gavel className="h-4 w-4" />
+              <span>{liveAuctions.length} live</span>
+            </div>
+          </div>
+          {liveAuctions.length > 0 ? (
+            <div className="relative">
+              <Carousel className="w-full" opts={{ align: "start" }}>
+                <CarouselContent>
+                  {liveAuctions.map((item) => {
+                    const auction = getAuctionObj(item);
+                    const currentBid = getCurrentBid(item);
+                    const bidCount = item.total_bids || 0;
+                    const timeLeft = getTimeLeft(item);
+                    const auctionStatus = auction.status || getAuctionStatus(item);
+                    const isWatched = watchedItems.has(auction.id);
+                    return (
+                      <CarouselItem key={auction.id} className="basis-full sm:basis-1/2 lg:basis-1/3">
+                        <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg overflow-hidden">
+                          <div className="relative">
+                            <Link to={`/auction-details/${auction.id}`}>
+                              <CardHeader className="p-0">
+                                <div className="aspect-square relative overflow-hidden bg-muted">
+                                  {auction.media && auction.media.length > 0 ? (
+                                    <img src={auction.media[0].media_url} alt={auction.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Gavel className="h-12 w-12 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  <Button variant="ghost" size="sm" className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/90 hover:bg-white">
+                                    <Heart className={`h-4 w-4 ${isWatched ? 'fill-current text-red-500' : 'text-gray-600'}`} />
+                                  </Button>
+                                </div>
+                              </CardHeader>
+                            </Link>
+                            <CardContent className="p-4">
+                              <Link to={`/auction-details/${auction.id}`}>
+                                <div className="space-y-3">
+                                  <div>
+                                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                                      {auction.title.toUpperCase()}
+                                    </CardTitle>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <User className="h-3 w-3 text-muted-foreground" />
+                                      <p className="text-xs text-muted-foreground">by {getSeller(item)}</p>
+                                    </div>
+                                    <CardDescription className="text-lg mt-3 text-muted-foreground line-clamp-2 mt-1">
+                                      {auction.description}
+                                    </CardDescription>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-muted-foreground">{bidCount > 0 ? 'Current Bid' : 'Starting Bid'}</span>
+                                      <span className="font-bold text-xl text-primary">₦{currentBid.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                      <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Timer className="h-3 w-3" />
+                                        <span className={timeLeft === "Ended" ? "text-destructive" : ""}>
+                                          <AuctionTimer auction={auction} />
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3 text-muted-foreground">
+                                        <div className="flex items-center gap-1">
+                                          <Gavel className="h-3 w-3" />
+                                          <span>{bidCount} bid{bidCount !== 1 ? 's' : ''}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Eye className="h-3 w-3" />
+                                          <span>{getWatchers(item)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Separator />
+                                  <Button className="w-full gap-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/auction-details/${auction.id}`); }}>
+                                    <Gavel className="h-4 w-4" />
+                                    Bid Now
+                                  </Button>
+                                </div>
+                              </Link>
+                            </CardContent>
                           </div>
-                        )}
+                        </Card>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            </div>
+          ) : (
+            <div className="text-muted-foreground">No live auctions right now.</div>
+          )}
+        </section>
 
-                        {/* Watch Button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/90 hover:bg-white"
-                          // onClick={(e) => {
-                          //   e.preventDefault();
-                          //   e.stopPropagation();
-                          //   toggleWatch(auction.id);
-                          // }}
-                        >
-                          <Heart className={`h-4 w-4 ${isWatched ? 'fill-current text-red-500' : 'text-gray-600'}`} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                  </Link>
-                  
-                  {/* Card Content */}
-                  <CardContent className="p-4">
-                    <Link to={`/auction-details/${auction.id}`}>
-                      <div className="space-y-3">
-                        {/* Title and Seller */}
-                        <div>
-                          <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors leading-tight">
-                            {auction.title.toUpperCase()}
-                          </CardTitle>
-                          
-                          <div className="flex items-center gap-1 mt-1">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <p className="text-xs text-muted-foreground">
-                              by {getSeller(item)}
-                            </p>
-                          </div>
-                          <CardDescription className="text-lg mt-3 text-muted-foreground line-clamp-2 mt-1">
-                            {auction.description }
-                          </CardDescription>
-                        </div>
-
-                        {/* Current Bid */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">
-                              {bidCount > 0 ? 'Current Bid' : 'Starting Bid'}
-                            </span>
-                            <span className="font-bold text-xl text-primary">
-                              ₦{currentBid.toLocaleString()}
-                            </span>
-                          </div>
-                          
-                          {/* Time and Bids Info */}
-                          <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Timer className="h-3 w-3" />
-                              <span className={timeLeft === "Ended" ? "text-destructive" : ""}>
-                                <AuctionTimer auction={auction} />
-
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Gavel className="h-3 w-3" />
-                                <span>{bidCount} bid{bidCount !== 1 ? 's' : ''}</span>
+        {/* Upcoming Auctions */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Upcoming Auctions</h2>
+          {upcomingAuctions.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              {upcomingAuctions.map((item) => {
+                const auction = getAuctionObj(item);
+                const currentBid = getCurrentBid(item);
+                const bidCount = item.total_bids || 0;
+                const timeLeft = getTimeLeft(item);
+                const auctionStatus = auction.status || getAuctionStatus(item);
+                const isWatched = watchedItems.has(auction.id);
+                return (
+                  <Card key={auction.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg overflow-hidden">
+                    <div className="relative">
+                      <Link to={`/auction-details/${auction.id}`}>
+                        <CardHeader className="p-0">
+                          <div className="aspect-square relative overflow-hidden bg-muted">
+                            {auction.media && auction.media.length > 0 ? (
+                              <img src={auction.media[0].media_url} alt={auction.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Gavel className="h-12 w-12 text-muted-foreground" />
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                <span>{getWatchers(item)}</span>
+                            )}
+                            <Button variant="ghost" size="sm" className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/90 hover:bg-white">
+                              <Heart className={`h-4 w-4 ${isWatched ? 'fill-current text-red-500' : 'text-gray-600'}`} />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                      </Link>
+                      <CardContent className="p-4">
+                        <Link to={`/auction-details/${auction.id}`}>
+                          <div className="space-y-3">
+                            <div>
+                              <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                                {auction.title.toUpperCase()}
+                              </CardTitle>
+                              <div className="flex items-center gap-1 mt-1">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <p className="text-xs text-muted-foreground">by {getSeller(item)}</p>
+                              </div>
+                              <CardDescription className="text-lg mt-3 text-muted-foreground line-clamp-2 mt-1">
+                                {auction.description}
+                              </CardDescription>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">{bidCount > 0 ? 'Current Bid' : 'Starting Bid'}</span>
+                                <span className="font-bold text-xl text-primary">₦{currentBid.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Timer className="h-3 w-3" />
+                                  <span className={timeLeft === "Ended" ? "text-destructive" : ""}>
+                                    <AuctionTimer auction={auction} />
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Gavel className="h-3 w-3" />
+                                    <span>{bidCount} bid{bidCount !== 1 ? 's' : ''}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Eye className="h-3 w-3" />
+                                    <span>{getWatchers(item)}</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Bid Now Button */}
-                        <Button 
-                          className="w-full gap-2" 
-                          disabled={auctionStatus === 'ended'}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate(`/auction-details/${auction.id}`);
-                          }}
-                        >
-                          {auctionStatus === 'ended' ? (
-                            <>
-                              <Clock className="h-4 w-4" />
-                              Auction Ended
-                            </>
-                          ) : auctionStatus === 'upcoming' ? (
-                            <>
+                            <Separator />
+                            <Button className="w-full gap-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/auction-details/${auction.id}`); }}>
                               <Clock className="h-4 w-4" />
                               Starts Soon
-                            </>
-                          ) : (
-                            <>
-                              <Gavel className="h-4 w-4" />
-                              Bid Now
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </Link>
-                  </CardContent>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                            </Button>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-muted-foreground">No upcoming auctions.</div>
+          )}
+        </section>
 
-        {/* No Results */}
-        {filteredAndSortedAuctions.length === 0 && (
-          <div className="text-center py-12">
-            <Gavel className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No auctions found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery ? 
-                `No auctions match your search for "${searchQuery}"` : 
+        {/* Past Auctions */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Past Auctions</h2>
+          {pastAuctions.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              {pastAuctions.map((item) => {
+                const auction = getAuctionObj(item);
+                const currentBid = getCurrentBid(item);
+                const bidCount = item.total_bids || 0;
+                const auctionStatus = auction.status || getAuctionStatus(item);
+                const isWatched = watchedItems.has(auction.id);
+                return (
+                  <Card key={auction.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg overflow-hidden">
+                    <div className="relative">
+                      <Link to={`/auction-details/${auction.id}`}>
+                        <CardHeader className="p-0">
+                          <div className="aspect-square relative overflow-hidden bg-muted">
+                            {auction.media && auction.media.length > 0 ? (
+                              <img src={auction.media[0].media_url} alt={auction.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Gavel className="h-12 w-12 text-muted-foreground" />
+                              </div>
+                            )}
+                            <Button variant="ghost" size="sm" className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/90 hover:bg-white">
+                              <Heart className={`h-4 w-4 ${isWatched ? 'fill-current text-red-500' : 'text-gray-600'}`} />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                      </Link>
+                      <CardContent className="p-4">
+                        <Link to={`/auction-details/${auction.id}`}>
+                          <div className="space-y-3">
+                            <div>
+                              <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                                {auction.title.toUpperCase()}
+                              </CardTitle>
+                              <div className="flex items-center gap-1 mt-1">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <p className="text-xs text-muted-foreground">by {getSeller(item)}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Final Bid</span>
+                                <span className="font-bold text-xl text-primary">₦{currentBid.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-3 text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Gavel className="h-3 w-3" />
+                                    <span>{bidCount} bid{bidCount !== 1 ? 's' : ''}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <Separator />
+                            <Button className="w-full gap-2" variant="outline" disabled>
+                              <Clock className="h-4 w-4" />
+                              Auction Ended
+                            </Button>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-muted-foreground">No past auctions.</div>
+          )}
+        </section>
                 "No auctions match your current filters"
               }
             </p>
