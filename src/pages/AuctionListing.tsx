@@ -37,28 +37,105 @@ const AuctionListing = () => {
   const [filterBy, setFilterBy] = useState("all");
   const [watchedItems, setWatchedItems] = useState<Set<number>>(new Set());
 
+  // useEffect(() => {
+  //   const getAuction = async () => {
+  //     const token = getCookie('token');
+  //     if (!token) return;
+
+  //     try {
+  //       const result = await auctionAPI.fetchAuctions(token);
+  //       // result.data is an array of { auction, total_bids, ... }
+  //       setAuctions(result.data || []);
+  //       setLoading(false);
+  //       console.log("Fetched result:", result);
+  //     } catch (error) {
+  //       setLoading(false);
+  //       console.error("Error fetching bids:", error);
+  //     }
+  //   };
+
+  //   getAuction();
+  // }, []);
+
+  // Unified auction data fetching
   useEffect(() => {
-    const getAuction = async () => {
+    const fetchAllAuctionCategories = async () => {
       const token = getCookie('token');
-      if (!token) return;
+      if (!token) {
+        console.error("No token found. User might not be logged in.");
+        setLoading(false);
+        return;
+      }
 
       try {
-        const result = await auctionAPI.fetchAuctions(token);
-        // result.data is an array of { auction, total_bids, ... }
-        setAuctions(result.data || []);
-        setLoading(false);
-        console.log("Fetched result:", result);
+        // Create an array to store all auction data
+        let allAuctions: any[] = [];
+        // Create a Set to track unique auction IDs
+        const uniqueAuctionIds = new Set<number>();
+        
+        // Fetch all categories one by one to ensure we get data
+        const categories = ["live", "upcoming", "past", "ending_soon"];
+        
+        for (const category of categories) {
+          try {
+            const result = await auctionAPI.fetchAuctionsByCategory(category, token);
+            if (result.success && result.data && Array.isArray(result.data)) {
+              console.log(`Fetched ${category} auctions:`, result.data.length);
+              
+              // Filter out duplicates before adding to allAuctions
+              const newAuctions = result.data.filter(item => {
+                const auction = getAuctionObj(item);
+                const auctionId = auction.id;
+                
+                // If this auction ID is already in our set, it's a duplicate
+                if (uniqueAuctionIds.has(auctionId)) {
+                  return false;
+                }
+                
+                // Otherwise, add it to our set and keep it
+                uniqueAuctionIds.add(auctionId);
+                return true;
+              });
+              
+              // Add unique auctions to our combined array
+              allAuctions = [...allAuctions, ...newAuctions];
+            } else {
+              console.warn(`No data or invalid data for ${category} auctions:`, result);
+            }
+          } catch (categoryError) {
+            console.error(`Error fetching ${category} auctions:`, categoryError);
+          }
+        }
+        
+        // Set all auctions at once
+        console.log("All auctions fetched (unique):", allAuctions.length, allAuctions);
+        setAuctions(allAuctions);
       } catch (error) {
+        console.error("Error in main auction fetching:", error);
+      } finally {
         setLoading(false);
-        console.error("Error fetching bids:", error);
       }
     };
 
-    getAuction();
+    fetchAllAuctionCategories();
   }, []);
+  
+  // Debug log to check auctions state
+  useEffect(() => {
+    console.log("Current auctions state:", auctions);
+  }, [auctions]);
+
+
 
   // Helper to get the auction object from the API response
-  const getAuctionObj = (item: any) => item.auction || {};
+  const getAuctionObj = (item: any) => {
+    // If the item already has auction properties directly, return the item itself
+    if (item.title || item.auction_start_time || item.auction_end_time) {
+      return item;
+    }
+    // Otherwise, try to get the auction property (for backward compatibility)
+    return item.auction || {};
+  };
 
   // Helper to get the current bid (use highest_bid or starting_bid)
   const getCurrentBid = (item: any) => {
@@ -66,30 +143,14 @@ const AuctionListing = () => {
     if (item.highest_bid) return Number(item.highest_bid);
     if (auction.current_bid) return Number(auction.current_bid);
     if (auction.starting_bid) return Number(auction.starting_bid);
+    if (auction.highest_bid) return Number(auction.highest_bid);
     return 0;
   };
-
-  // // Helper to get bid increment (handle "Auto" as fallback)
-  // const getBidIncrement = (item: any) => {
-  //   const auction = getAuctionObj(item);
-  //   if (auction.bid_increment && auction.bid_increment !== "Auto") return Number(auction.bid_increment);
-  //   return 100; // fallback increment
-  // };
-
-  // // Helper to get tags (parse JSON string)
-  // const getTags = (item: any) => {
-  //   const auction = getAuctionObj(item);
-  //   try {
-  //     return auction.promotional_tags ? JSON.parse(auction.promotional_tags) : [];
-  //   } catch {
-  //     return [];
-  //   }
-  // };
 
   // Helper to get seller name
   const getSeller = (item: any) => {
     const auction = getAuctionObj(item);
-    return auction.creator?.name || "Unknown";
+    return auction.creator?.name || auction.seller_name || "Unknown";
   };
 
   // Helper to get watchers (not in API, fallback to 0)
@@ -125,9 +186,11 @@ const AuctionListing = () => {
       if (!matchesSearch) return false;
 
       if (filterBy === "all") return true;
-      if (filterBy === "featured") return auction.featured;
-      if (filterBy === "ending_soon") return getAuctionStatus(item) === 'ending_soon';
-      if (filterBy === "watched") return watchedItems.has(auction.id);
+       if (filterBy === "featured") return getAuctionStatus(item) === 'active';
+       if (filterBy === "ending_soon") return getAuctionStatus(item) === 'ending_soon';
+       if (filterBy === "upcoming") return getAuctionStatus(item) === 'upcoming';
+       if (filterBy === "past") return getAuctionStatus(item) === 'ended';
+       if (filterBy === "watched") return watchedItems.has(auction.id);
 
       return true;
     })
@@ -176,6 +239,7 @@ const AuctionListing = () => {
           // For other statuses, sort by end time (earliest first)
           return new Date(auctionA.auction_end_time).getTime() - new Date(auctionB.auction_end_time).getTime();
       }
+    });
   // Categorize by status for sections
   const liveAuctions = filteredAndSortedAuctions.filter((item) => {
     const auction = getAuctionObj(item);
@@ -196,6 +260,9 @@ const AuctionListing = () => {
     const end = new Date(auction.auction_end_time);
     return now > end;
   });
+console.log('live', liveAuctions );
+console.log('upcoming', upcomingAuctions );
+console.log('past', pastAuctions );
 
   if (loading) {
     return (
@@ -238,7 +305,7 @@ const AuctionListing = () => {
             </div>
             
             {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
+            {/* <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-48">
                 <SortAsc className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sort by" />
@@ -250,7 +317,7 @@ const AuctionListing = () => {
                 <SelectItem value="price_high">Price: High to Low</SelectItem>
                 <SelectItem value="most_watched">Most Watched</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             {/* Filter */}
             <Select value={filterBy} onValueChange={setFilterBy}>
@@ -260,9 +327,11 @@ const AuctionListing = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Auctions</SelectItem>
-                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="featured">Live</SelectItem>
                 <SelectItem value="ending_soon">Ending Soon</SelectItem>
-                <SelectItem value="watched">Watched</SelectItem>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
+                <SelectItem value="past">Past</SelectItem>
+
               </SelectContent>
             </Select>
           </div>
@@ -543,8 +612,12 @@ const AuctionListing = () => {
             <div className="text-muted-foreground">No past auctions.</div>
           )}
         </section>
-                "No auctions match your current filters"
-              }
+
+        {/* No Results Message */}
+        {filteredAndSortedAuctions.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg mb-4">
+              No auctions match your current filters
             </p>
             {(searchQuery || filterBy !== "all") && (
               <Button 
@@ -570,7 +643,7 @@ const AuctionListing = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default AuctionListing;

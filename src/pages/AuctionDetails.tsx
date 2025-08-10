@@ -229,18 +229,70 @@ const AuctionDetails = () => {
   };
 
 const isAuctionActive = (startTime, endTime) => {
-  if (!startTime || !endTime) return false;
+  if (!startTime || !endTime) {
+    console.log('Missing start or end time:', { startTime, endTime });
+    return false;
+  }
 
-  const now = new Date(); // current local time
-  const start = new Date(startTime); // from backend (ISO format)
-  const end = new Date(endTime);     // from backend
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
 
-  return now >= start && now <= end;
+  console.log('Current local time:', new Date().toLocaleString());
+console.log('Auction start (local):', new Date(startTime).toLocaleString());
+console.log('Auction end (local):', new Date(endTime).toLocaleString());
+
+  
+  const isActive = now >= start && now <= end;
+  console.log('Final result:', isActive);
+  
+  return isActive;
 };
 
-const active = isAuctionActive(auction?.auction_start_time, auction?.auction_end_time);
+
+
+const active = isAuctionActive(
+  auction?.auction_start_time,
+  auction?.auction_end_time
+);
+
+console.log('Auction data:', {
+  auction_start_time: auction?.auction_start_time,
+  auction_end_time: auction?.auction_end_time,
+  status: auction?.status
+});
 console.log('Auction Active:', active);
 
+  const getAuctionObj = (item: any) => {
+    // If the item already has auction properties directly, return the item itself
+    if (item?.title || item?.auction_start_time || item?.auction_end_time) {
+
+      return item;
+    }
+    // Otherwise, try to get the auction property (for backward compatibility)
+    return item?.auction || {};
+  };
+const getAuctionStatuss = (item: any) => {
+  const auction = getAuctionObj(item);
+  const now = new Date();
+  const startTime = new Date(auction.auction_start_time);
+  const endTime = new Date(auction.auction_end_time);
+
+  console.log("Current local time:", now.toString());
+  console.log("Auction start (local):", startTime.toString());
+  console.log("Auction end (local):", endTime.toString());
+  console.log("now < start:", now < startTime);
+  console.log("now > end:", now > endTime);
+  console.log("Time until end (ms):", endTime.getTime() - now.getTime());
+
+  if (now < startTime) return 'upcoming';
+  if (now > endTime) return 'ended';
+  if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
+  return 'active';
+};
+
+const stat = getAuctionStatuss(auction);
+console.log("Auction status:", stat);
 
 
 
@@ -737,7 +789,25 @@ useEffect(() => {
             </Card>
 
             {/* Bidding Panel */}
-            {isAuctionActive && (
+{/* upcoming bid */}
+  {stat === 'upcoming' && (
+     <Card className="shadow-lg border-0">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-medium mb-2">Auction {auctionStatus === 'ended' ? 'Ended' : 'Not Active'}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {auctionStatus === 'ended' 
+                        ? 'This auction has not started yet. Please check back later.'
+                        : 'This auction has not started yet. Please check back later.'
+                      }
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+    )}
+
+            {(stat === 'active' || stat === 'ending_soon') && (
               <Card className="shadow-lg border-0">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -795,6 +865,7 @@ useEffect(() => {
             )}
 
       <div className="mb-4">
+        
   <input
     type="checkbox"
     id="autoBidToggle"
@@ -806,6 +877,8 @@ useEffect(() => {
     Enable Auto-Bid
   </label>
 </div>
+
+
 
             {/* Auto-Bid Panel */}
             {showAutoBidPanel && (
@@ -923,8 +996,10 @@ useEffect(() => {
               </Card>
             )}
 
+  
+
             {/* Auction Ended */}
-            {!isAuctionActive && (
+            {stat === 'ended' && (
               <Card className="shadow-lg border-0">
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -933,7 +1008,7 @@ useEffect(() => {
                     <p className="text-sm text-muted-foreground">
                       {auctionStatus === 'ended' 
                         ? 'This auction has ended. No more bids can be placed.'
-                        : 'This auction is not currently active.'
+                        : 'This auction has ended. No more bids can be placed.'
                       }
                     </p>
                   </div>
