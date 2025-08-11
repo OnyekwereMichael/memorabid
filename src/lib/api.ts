@@ -358,11 +358,20 @@ export const adminAPI = {
         // formData.append('media[0]', data.featured.toString());
         
         // Add media files with proper field names
-        // const firstFile = data.media.find(item => item instanceof File);
-        // if (firstFile) {
-        //   formData.append('media[0]', firstFile);
-        //   console.log(`Added first file:`, firstFile.name, firstFile.type, firstFile.size);
-        // }
+        const mediaFiles = data.media.filter(item => item instanceof File);
+        if (mediaFiles.length > 0) {
+          // Only append the first file
+          const firstFile = mediaFiles[0];
+          formData.append('media[0]', firstFile);
+          console.log(`Added first file:`, firstFile.name, firstFile.type, firstFile.size);
+        } else if (Array.isArray(data.media) && data.media.length > 0) {
+          // If we have Base64 strings, include them in the FormData
+          const mediaBase64 = data.media.filter(item => typeof item === 'string');
+          if (mediaBase64.length > 0) {
+            formData.append('media_base64', JSON.stringify(mediaBase64));
+            console.log('Added Base64 media to FormData');
+          }
+        }
         
         // console.log(`Sending FormData with ${firstFile} files:`, formData);
         
@@ -427,6 +436,7 @@ export const adminAPI = {
           auto_extend: data.auto_extend,
           featured: data.featured,
           promotional_tags: (data.promotional_tags || []).filter(tag => tag.trim() !== ''),
+          media: data.media, // Include the media field (Base64 strings)
         };
         
         console.log("Sending JSON payload without files:", jsonPayload);
@@ -479,6 +489,78 @@ export const adminAPI = {
   },
 
   // Helper function to create auction without files
+  async createAuctionWithoutFiles(data: CreateAuctionData, token?: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+    errors?: Record<string, string[]>;
+  }> {
+    try {
+      const endpoint = `${API_BASE_URL}/auction/admin/post`;
+      
+      // Prepare the JSON payload
+      const jsonPayload = {
+        title: data.title,
+        description: data.description,
+        auction_start_time: data.auction_start_time,
+        auction_end_time: data.auction_end_time,
+        starting_bid: data.starting_bid,
+        reserve_price: data.reserve_price,
+        bid_increment: 'Auto', // send as 'Auto' or 'Fixed' instead of a number
+        buy_now_price: data.buy_now_price,
+        auto_extend: data.auto_extend,
+        featured: data.featured,
+        promotional_tags: (data.promotional_tags || []).filter(tag => tag.trim() !== ''),
+        media: data.media, // Include the media field (Base64 strings)
+      };
+      
+      console.log("Sending JSON payload in createAuctionWithoutFiles:", jsonPayload);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(jsonPayload),
+      });
+      
+      const contentType = response.headers.get('content-type');
+      let result: any = {};
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Non-JSON response in createAuctionWithoutFiles:", text);
+        return {
+          success: false,
+          message: 'Server error — received non-JSON response.',
+        };
+      }
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || result.error || 'Failed to create auction',
+          errors: result.errors || {},
+        };
+      }
+      
+      return {
+        success: true,
+        message: result.message || 'Auction created successfully',
+        data: result.data,
+      };
+    } catch (error) {
+      console.error('Create auction without files error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        errors: {},
+      };
+    }
+  },
   
   async fetchAuctions(token?: string): Promise<{
     success: boolean;

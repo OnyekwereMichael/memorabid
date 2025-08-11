@@ -293,77 +293,72 @@ const AdminDashboard = () => {
   // };
 
   const handleCreateAuction = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const {
-    auction_start_time,
-    auction_end_time,
-    bid_increment,
-    starting_bid,
-    reserve_price,
-    promotional_tags,
-    media,
-    ...rest
-  } = auctionFormData;
-
-  // Validate bid increment
-  if (!bid_increment || Number(bid_increment) <= 0 || isNaN(Number(bid_increment))) {
-    toast({
-      title: "Invalid Bid Increment",
-      description: "Bid increment must be a number greater than zero.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  // Validate auction times
-  const startTime = new Date(auction_start_time);
-  const endTime = new Date(auction_end_time);
-
-  if (endTime <= startTime) {
-    toast({
-      title: "Invalid Auction End Time",
-      description: "The auction end time must be after the start time.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  setIsCreatingAuction(true);
-
-  try {
-    const token = getCookie("token");
-
-    // Convert all File objects in media to base64 strings
-    const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const base64Media = Array.isArray(media)
-      ? await Promise.all(media.filter(f => f instanceof File).map(fileToBase64))
-      : [];
-
-    // Clean promotional_tags (remove empty tags)
-    const cleanedTags = Array.isArray(promotional_tags)
-      ? promotional_tags.filter(tag => tag && tag.trim() !== "")
-      : [];
-
-    // Build the final payload
-    const payload = {
-      ...rest,
+    const {
       auction_start_time,
       auction_end_time,
-      starting_bid: Number(starting_bid),
-      reserve_price: Number(reserve_price),
-      bid_increment: Number(bid_increment),
-      media: base64Media, // base64 strings
-      promotional_tags: cleanedTags,
-    };
+      bid_increment,
+      starting_bid,
+      reserve_price,
+      promotional_tags,
+      media,
+      ...rest
+    } = auctionFormData;
 
-    // Send payload as JSON
-    const response = await adminAPI.createAuction(payload, token || undefined);
+    // Validate bid increment
+    if (!bid_increment || Number(bid_increment) <= 0 || isNaN(Number(bid_increment))) {
+      toast({
+        title: "Invalid Bid Increment",
+        description: "Bid increment must be a number greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate auction times
+    const startTime = new Date(auction_start_time);
+    const endTime = new Date(auction_end_time);
+
+    if (endTime <= startTime) {
+      toast({
+        title: "Invalid Auction End Time",
+        description: "The auction end time must be after the start time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingAuction(true);
+
+    try {
+      const token = getCookie("token");
+      
+      // Import the utility function to create auction payload with only the first image
+      const { getFirstImageAsBase64 } = await import("@/lib/imageUtils");
+      
+      // Convert only the first image to Base64
+      const firstImageBase64 = await getFirstImageAsBase64(Array.isArray(media) ? media : []);
+      
+      // Clean promotional_tags (remove empty tags)
+      const cleanedTags = Array.isArray(promotional_tags)
+        ? promotional_tags.filter(tag => tag && tag.trim() !== "")
+        : [];
+
+      // Build the final payload
+      const payload = {
+        ...rest,
+        auction_start_time,
+        auction_end_time,
+        starting_bid: Number(starting_bid),
+        reserve_price: Number(reserve_price),
+        bid_increment: Number(bid_increment),
+        media: firstImageBase64 ? [firstImageBase64] : [], // Include only the first image
+        promotional_tags: cleanedTags,
+      };
+
+      // Send payload as JSON
+      const response = await adminAPI.createAuction(payload, token || undefined);
 
     if (response.success) {
       toast({
