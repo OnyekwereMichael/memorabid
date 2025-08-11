@@ -9,7 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 export const AUCTION_EVENTS = {
   AUCTION_CREATED: 'auction-created',
   AUCTION_UPDATED: 'auction-updated',
-  AUCTION_DELETED: 'auction-deleted'
+  AUCTION_DELETED: 'auction-deleted',
+  BID_PLACED: 'bid-placed'
 };
 
 // Helper to emit auction events

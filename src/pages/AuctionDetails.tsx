@@ -225,6 +225,7 @@ const AuctionDetails = () => {
                   amount: Number(result.data.highest_bid),
                   identity: result.data.highest_bidder?.name || 'None'
                 },
+                highest_bidder: result.data.highest_bidder || { id: 'Unknown' },
                 total_bids: apiAuction.bids.length,
                 total_active_bidders: result.data.total_active_bidders || apiAuction.bids.length
               });
@@ -380,6 +381,95 @@ console.log("Auction status:", stat);
   setAmount(nextBid);
 };
 
+  // Function to refresh auction and bid data
+  const refreshAuctionAndBids = async () => {
+    if (!id) return;
+    const token = getCookie('token');
+    if (!token) return;
+
+    try {
+      // Fetch auction details
+      const auctionResult = await auctionAPI.fetchAuctionById(id, token);
+      if (auctionResult && auctionResult.data && auctionResult.data.auction) {
+        const apiAuction = auctionResult.data.auction;
+        // Parse promotional_tags if it's a stringified array
+        let tags: string[] = [];
+        try {
+          tags = apiAuction.promotional_tags
+            ? JSON.parse(apiAuction.promotional_tags)
+            : [];
+        } catch {
+          tags = [];
+        }
+
+        const auctionObject = {
+          id: apiAuction.id,
+          title: apiAuction.title,
+          description: apiAuction.description,
+          starting_bid: Number(apiAuction.starting_bid),
+          reserve_price: Number(apiAuction.reserve_price),
+          bid_increment: isNaN(Number(apiAuction.bid_increment)) ? 100 : Number(apiAuction.bid_increment),
+          auction_start_time: apiAuction.auction_start_time,
+          auction_end_time: apiAuction.auction_end_time,
+          media: apiAuction.media || [],
+          media_url: apiAuction.media_url || "",
+          watchers: apiAuction.watchers || 0,
+          promotional_tags: tags,
+          auto_extend: apiAuction.auto_extend,
+          featured: apiAuction.featured,
+          status: apiAuction.status,
+          current_bid: auctionResult.data.highest_bid ? Number(auctionResult.data.highest_bid) : Number(apiAuction.starting_bid),
+          user: apiAuction.creator
+            ? {
+                id: apiAuction.creator.id,
+                name: apiAuction.creator.name,
+                email: apiAuction.creator.email,
+                role: apiAuction.creator.role || "seller",
+              }
+            : { id: 0, name: "Unknown", email: "", role: "seller" },
+        } as Auction;
+
+        setAuction(auctionObject);
+
+        // Set bid history if available
+        if (apiAuction.bids && Array.isArray(apiAuction.bids)) {
+          setBidHistory(
+            apiAuction.bids.map((b: any, idx: number) => ({
+              id: b.id || idx,
+              bidder: b.bidder?.name || "Bidder",
+              bid_amount: Number(b.amount),
+              time: b.created_at || new Date().toISOString(),
+              isAutoBid: b.is_auto === "1" || false,
+            }))
+          );
+          
+          // Set bid data for display
+          if (auctionResult.data.highest_bid) {
+            setBidData({
+              highest_bid: {
+                amount: Number(auctionResult.data.highest_bid),
+                identity: auctionResult.data.highest_bidder?.name || 'None'
+              },
+              highest_bidder: auctionResult.data.highest_bidder || { id: 'Unknown' },
+              total_bids: apiAuction.bids.length,
+              total_active_bidders: auctionResult.data.total_active_bidders || apiAuction.bids.length
+            });
+          }
+        }
+      }
+
+      // Fetch bids separately
+      const bidsResult = await auctionAPI.fetchBidsByAuctionId(id, token);
+      if (bidsResult && bidsResult.data) {
+        setBidData(bidsResult.data || {});
+      }
+
+      console.log("Auction and bids refreshed");
+    } catch (error) {
+      console.error("Error refreshing auction data:", error);
+    }
+  };
+
   const handlePlaceBid = async () => {
     if (!auction) return;
 
@@ -422,17 +512,15 @@ console.log("Auction status:", stat);
           description: `Your bid of $${bid_amount.toLocaleString()} has been placed.`,
         });
 
-        // Optionally update UI...
-        const newBid: Bid = {
-          id: bidHistory.length + 1,
-          bidder: "You",
-          bid_amount: <a href="#">{bid_amount}</a>,
-          time: new Date().toISOString(),
-        };
-        setBidHistory([newBid, ...bidHistory]);
-        setAuction({ ...auction, current_bid: bid_amount });
+        // Refresh auction and bid data
+        await refreshAuctionAndBids();
 
-        // setAmount(bid_amount + auction.bid_increment);
+        // Import and emit bid event
+        const { emitAuctionEvent, AUCTION_EVENTS } = await import("@/lib/utils");
+        emitAuctionEvent(AUCTION_EVENTS.BID_PLACED, { 
+          auction_id: auction.id,
+          bid_amount: bid_amount
+        });
       } else {
         toast({
           title: "Bid Failed",
@@ -519,6 +607,49 @@ useEffect(() => {
   };
 
   getBids();
+  
+  // Set up event listeners for bid updates
+  let handleBidPlaced: ((event: Event) => void) | null = null;
+  let cleanupEventListeners: (() => void) | null = null;
+  
+  // Import auction events
+  import("@/lib/utils").then(({ AUCTION_EVENTS }) => {
+    // Listen for bid events
+    handleBidPlaced = (event: any) => {
+      const customEvent = event as CustomEvent;
+      const eventData = customEvent.detail;
+      
+      // Only refresh if the bid is for this auction
+      if (eventData && eventData.auction_id === Number(id)) {
+        console.log("Bid placed event received, refreshing auction data...");
+        refreshAuctionAndBids();
+      }
+    };
+    
+    // Add event listeners
+    window.addEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
+    
+    // Store cleanup function
+    cleanupEventListeners = () => {
+      if (handleBidPlaced) {
+        window.removeEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
+      }
+    };
+  });
+  
+  // Set up polling interval as a fallback (every 15 seconds)
+  const intervalId = setInterval(() => {
+    console.log("Auto-refreshing auction data...");
+    refreshAuctionAndBids();
+  }, 15000); // 15 seconds
+  
+  // Clean up interval and event listeners on component unmount
+  return () => {
+    clearInterval(intervalId);
+    if (cleanupEventListeners) {
+      cleanupEventListeners();
+    }
+  };
 }, [id, toast]);
 
 console.log("Bid Data:", bidData);
@@ -707,12 +838,11 @@ useEffect(() => {
                       </div>
                       <div className="flex items-center gap-3">
                         <Plus className="h-5 w-5 text-primary" />
-                        <div >
-                          <p className="text-sm font-medium text-muted-foreground">Current Highest Bidder</p>
-                          <div className="flex gap-3 mt-1">
-                            <p className="text-lg font-bold">{bidData.highest_bid?.identity || "Unknown"}</p> -
-                           <p>{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
-                          </div>
+                        <div className="flex gap-1 items-center">
+                          <p className="text-md font-bold">Bidder</p>{bidData.highest_bidder?.id || "Unknown"} -
+                          
+                          {/* <p className="text-sm font-medium text-muted-foreground mt-2">Highest Bid</p> */}
+                          <p className="text-lg font-bold">{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
                         </div>
                       </div>
 
