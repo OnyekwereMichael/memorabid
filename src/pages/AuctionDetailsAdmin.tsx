@@ -50,7 +50,7 @@ import { useAuctionStatus } from "./ActiveAuction";
 import AuctionTimer from "./AuctionTimer";
 // @ts-ignore
 import confetti from 'canvas-confetti';
-import AuctionTimeline from "./AuctionTimeline";
+
 
 interface Bid {
   id: number;
@@ -217,7 +217,7 @@ const AuctionDetailsAdmins = () => {
 
   // Update countdown timer
   useEffect(() => {
-    if (!auction) return;
+    if (!auction?.auction_end_time) return;
 
     const updateTimer = () => {
       const now = new Date();
@@ -246,7 +246,7 @@ const AuctionDetailsAdmins = () => {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [auction]);
+  }, [auction?.auction_end_time]);
 
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -590,7 +590,7 @@ useEffect(() => {
   };
 
   getBids();
-}, [id]);
+}, [id, toast]);
 
 // Fetch bidders data
 useEffect(() => {
@@ -853,10 +853,10 @@ console.log("Auction media:", auction);
 
             <Card>
               <CardContent>
-                  <AuctionTimeline
+                  {/* <AuctionTimeline
   auctionStart={auction.auction_start_time}
   auctionEnd={auction.auction_end_time}
-/>
+/> */}
 
               </CardContent>
             </Card>

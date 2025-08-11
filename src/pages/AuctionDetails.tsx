@@ -73,22 +73,25 @@ const AuctionDetails = () => {
   const [endHours, setEndHours] = useState(0);
 
   useEffect(() => {
+    if (!auction) return;
+    
     const updateCountdown = () => {
       const getHoursRemaining = (targetTime: string) => {
+        if (!targetTime) return 0;
         const now = new Date();
         const target = new Date(targetTime);
-        return (target - now) / (1000 * 60 * 60);
+        return (target.getTime() - now.getTime()) / (1000 * 60 * 60);
       };
 
-      setStartHours(getHoursRemaining(auction?.auction_start_time));
-      setEndHours(getHoursRemaining(auction?.auction_end_time));
+      setStartHours(getHoursRemaining(auction.auction_start_time));
+      setEndHours(getHoursRemaining(auction.auction_end_time));
     };
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [auction]);
+  }, [auction?.auction_start_time, auction?.auction_end_time]);
 
 
 
@@ -199,7 +202,7 @@ const AuctionDetails = () => {
 
   // Update countdown timer
   useEffect(() => {
-    if (!auction) return;
+    if (!auction?.auction_end_time) return;
 
     const updateTimer = () => {
       const now = new Date();
@@ -228,7 +231,7 @@ const AuctionDetails = () => {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [auction]);
+  }, [auction?.auction_end_time]);
 
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -468,7 +471,7 @@ useEffect(() => {
   };
 
   getBids();
-}, [id]);
+}, [id, toast]);
 
 console.log("Bid Data:", bidData);
 console.log("Auction media:", auction);
@@ -488,7 +491,7 @@ useEffect(() => {
   };
 
   getAuctionDetails();
-}, [id]);
+}, [id, toast]);
 
 
   if (loading) {
@@ -581,37 +584,33 @@ useEffect(() => {
               </CardHeader>
               <CardContent>
                 {/* Product Image */}
-                {(() => {
-                  console.log("AuctionDetails - Rendering media section - auction:", auction);
-                  console.log("AuctionDetails - Rendering media section - auction.media:", auction.media);
-                  console.log("AuctionDetails - Rendering media section - auction.media.length:", auction.media?.length);
-                  console.log("AuctionDetails - Rendering media section - first media item:", auction.media?.[0]);
-                  console.log("AuctionDetails - Rendering media section - media_url:", auction.media?.[0]?.media_url);
-                  
-                  return auction.media && auction.media.length > 0 ? (
-  <div className="aspect-video w-full rounded-lg overflow-hidden border mb-6">
-    <img 
-      src={auction.media[0].media_url}
-      alt={auction.title}
-      className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error("AuctionDetails - Image failed to load:", e);
-                          e.currentTarget.style.display = 'none';
-                        }}
-    />
-  </div>
-) : (
-  <div className="aspect-video w-full rounded-lg border bg-muted flex items-center justify-center mb-6">
-    <div className="text-center">
-      <FileImage className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-      <p className="text-muted-foreground">No image available</p>
-    </div>
-  </div>
-                  );
-                })()}
+                {auction && (
+                  <>
+                    {auction.media && auction.media.length > 0 ? (
+                      <div className="aspect-video w-full rounded-lg overflow-hidden border mb-6">
+                        <img 
+                          src={auction.media[0].media_url}
+                          alt={auction.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error("AuctionDetails - Image failed to load:", e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video w-full rounded-lg border bg-muted flex items-center justify-center mb-6">
+                        <div className="text-center">
+                          <FileImage className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No image available</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Promotional Tags */}
-                {auction.promotional_tags && auction.promotional_tags.length > 0 && (
+                {auction && auction.promotional_tags && auction.promotional_tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {auction.promotional_tags.filter(tag => tag.trim()).map((tag, index) => (
                       <Badge key={index} variant="outline" className="text-sm">
@@ -627,7 +626,9 @@ useEffect(() => {
             {/* Auction Details Tabs */}
             <Card className="shadow-lg border-0">
               <Tabs defaultValue="details" className="w-full">
-                
+                <TabsList className="border-b px-6 pt-2">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                </TabsList>
                 
                 <TabsContent value="details" className="p-6">
                     <p className="text-2xl font-semibold mb-4">Details</p>
@@ -709,7 +710,6 @@ useEffect(() => {
                     </div>
                   </div>
                 </TabsContent>
-                
               </Tabs>
             </Card>
           </div>

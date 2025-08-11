@@ -4,7 +4,7 @@ const AuctionTimer = ({ auction }) => {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    if (!auction) return;
+    if (!auction?.auction_start_time || !auction?.auction_end_time) return;
 
     const updateTimer = () => {
       const now = new Date();
@@ -54,7 +54,7 @@ const AuctionTimer = ({ auction }) => {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [auction]);
+  }, [auction?.auction_start_time, auction?.auction_end_time]);
 
   return (
     <div className="text-sm font-medium">
