@@ -1057,7 +1057,9 @@ useEffect(() => {
                                   <TableBody>
                                     {bidHistory.map((bid) => (
                                       <TableRow key={bid.id}>
-                                        <TableCell className="font-medium">Bidder{bid.id}</TableCell>
+                                        <TableCell className="font-medium ">
+                                          Bidder 
+                                          <span>{bidData.highest_bidder?.id || "3"}</span></TableCell>
                                         <TableCell className="font-bold text-primary">
                                           ${bid.bid_amount.toLocaleString()}
                                         </TableCell>
