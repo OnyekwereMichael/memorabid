@@ -37,7 +37,8 @@ import {
   Timer,
   Trophy,
   AlertCircle,
-  History
+  History,
+  Mail
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { adminAPI, Auction, auctionAPI, Bidder, BiddersResponse } from "@/lib/api";
@@ -50,7 +51,18 @@ import { useAuctionStatus } from "./ActiveAuction";
 import AuctionTimer from "./AuctionTimer";
 // @ts-ignore
 import confetti from 'canvas-confetti';
+import AuctionTimeline from "./AuctionTimeline";
 
+// Helper function to get initials from name
+const getInitials = (name: string) => {
+  if (!name) return "?"; 
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+};
 
 interface Bid {
   id: number;
@@ -73,7 +85,22 @@ const AuctionDetailsAdmins = () => {
   const [bidLoading, setBidLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [bidHistory, setBidHistory] = useState<Bid[]>([]);
-  const [bidData, setBidData] = useState<{ [key: string]: any }>({});
+  const [bidData, setBidData] = useState<{ 
+    highest_bid?: { amount: number; identity: string };
+    total_active_bidders?: number;
+    winner?: {
+      auction_id: number;
+      winner_id: number;
+      winner_type: string;
+      winner_name: string;
+      winner_email: string;
+    };
+    [key: string]: any;
+  }>({});
+
+  console.log('winner', bidData.winner);
+
+  
   const [showAutoBidPanel, setShowAutoBidPanel] = useState(false);
    const [startHours, setStartHours] = useState(0);
   const [endHours, setEndHours] = useState(0);
@@ -168,7 +195,7 @@ const AuctionDetailsAdmins = () => {
 
            setAuction(auctionObject);
 
-          // Set bid data with highest bid information
+          // Set bid data with highest bid information and winner if available
           if (result.data.highest_bid && result.data.highest_bidder) {
             setBidData({
               ...bidData,
@@ -178,6 +205,14 @@ const AuctionDetailsAdmins = () => {
               },
               total_active_bidders: result.data.total_active_bidders || 0
             });
+          }
+          
+          // Check if winner information is available in the response
+          if (result.data.winner) {
+            setBidData(prevData => ({
+              ...prevData,
+              winner: result.data.winner
+            }));
           }
 
           // Set bid history if available
@@ -541,6 +576,12 @@ const handleImageError = (index) => {
            description: `${winnerData.winner_name} (${winnerData.winner_email}) has been officially declared the winner of Auction #${winnerData.auction_id}. The auction has been successfully concluded.`,
          });
          
+         // Update bidData with winner information
+         setBidData(prevData => ({
+           ...prevData,
+           winner: winnerData
+         }));
+         
          // Log the complete winner details
          console.log('Winner declared successfully:', {
            auctionId: winnerData.auction_id,
@@ -603,6 +644,14 @@ useEffect(() => {
       const result = await adminAPI.fetchAuctionById_bidders(Number(id), token);
       if (result.success && result.data) {
         setBiddersData(result.data);
+        
+        // Check if there's winner information in the response
+        if (result.data.winner) {
+          setBidData(prevData => ({
+            ...prevData,
+            winner: result.data.winner
+          }));
+        }
       } else {
         console.error('Failed to fetch bidders:', result.message);
         toast({
@@ -853,10 +902,10 @@ console.log("Auction media:", auction);
 
             <Card>
               <CardContent>
-                  {/* <AuctionTimeline
+                  <AuctionTimeline
   auctionStart={auction.auction_start_time}
   auctionEnd={auction.auction_end_time}
-/> */}
+/>
 
               </CardContent>
             </Card>
@@ -937,6 +986,41 @@ console.log("Auction media:", auction);
                         : 'This auction is not currently active.'
                       }
                     </p>
+                    
+                    {/* Winner Information Section */}
+                    {auctionStatus === 'ended' && (
+                      <div className="mt-6 border-t pt-4">
+                        <h4 className="font-medium text-primary flex items-center justify-center gap-2 mb-3">
+                          <Trophy className="h-4 w-4" />
+                          Winner Information
+                        </h4>
+                        
+                        {bidData.winner ? (
+                          <div className="space-y-2 text-left">
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Winner ID:</span>
+                              <span className="font-medium">{bidData.winner.winner_id}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Name:</span>
+                              <span className="font-medium">{bidData.winner.winner_name}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Email:</span>
+                              <span className="font-medium">{bidData.winner.winner_email}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Type:</span>
+                              <span className="font-medium">{bidData.winner.winner_type || 'user'}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No winner has been declared yet.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1100,6 +1184,82 @@ console.log("Auction media:", auction);
           )}
         </CardContent>
       </Card>
+
+      {/* Winner Details Card */}
+
+      <Card className="shadow-lg border-0 mt-6">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Winner Details
+            </CardTitle>
+            <CardDescription>
+              Information about the declared winner of this auction
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {bidData.winner ? (
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm">
+                   {bidData.winner.winner_name}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-lg">{bidData.winner.winner_name}</h3>
+                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                         Winner
+                       </Badge>
+                    </div>
+                    
+                    <div className="flex items-center text-muted-foreground text-sm mb-4">
+                      <Mail className="h-4 w-4 mr-1" />
+                      {bidData.winner.winner_email}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Winner ID</p>
+                        <p className="font-medium">{bidData.winner.winner_id}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Type</p>
+                        <p className="font-medium">{bidData.winner.winner_type || 'user'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Auction ID</p>
+                        <p className="font-medium">{bidData.winner.auction_id}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Declared On</p>
+                        <p className="font-medium">{new Date().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <p className="text-green-800 text-sm">
+                    This winner has been officially declared for this auction.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-medium mb-1">No Winner Declared</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No winner has been declared for this auction yet.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Use the "Declare Winner" button in the Auction Bidders section to declare a winner.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+       
     </div>
   </div>
   );

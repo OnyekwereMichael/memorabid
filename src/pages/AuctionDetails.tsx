@@ -37,14 +37,17 @@ import {
   Timer,
   Trophy,
   AlertCircle,
-  History
+  History,
+  Link,
+  User
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { adminAPI, Auction, auctionAPI } from "@/lib/api";
-import { getCookie } from "@/lib/utils";
+import { getCookie, getTimeLeft } from "@/lib/utils";
 import { log } from "node:console";
 import { useAuctionStatus } from "./ActiveAuction";
 import AuctionTimer from "./AuctionTimer";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 interface Bid {
   id: number;
@@ -59,6 +62,7 @@ const AuctionDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [auction, setAuction] = useState<Auction | null>(null);
+    const [auctions, setAuctions] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
   const [bid_amount, setAmount] = useState<number>(0);
   const [maxAutoBid, setMaxAutoBid] = useState<number>(0);
@@ -71,6 +75,50 @@ const AuctionDetails = () => {
   const [showAutoBidPanel, setShowAutoBidPanel] = useState(false);
    const [startHours, setStartHours] = useState(0);
   const [endHours, setEndHours] = useState(0);
+  const [watchedItems, setWatchedItems] = useState<Set<number>>(new Set());
+
+
+  
+  useEffect(() => {
+    const getAuction = async () => {
+      const token = getCookie('token');
+      if (!token) return;
+
+      try {
+        const result = await auctionAPI.fetchAuctions(token);
+        // result.data is an array of { auction, total_bids, ... }
+        setAuctions(result.data || []);
+        setLoading(false);
+        console.log("Fetched result:", result);
+      } catch (error) {
+        setLoading(false);
+        console.error("Error fetching bids:", error);
+      }
+    };
+
+    getAuction();
+  }, []);
+
+  console.log('auctionsss', auctions);
+
+    const getCurrentBid = (item: any) => {
+    const auction = getAuctionObj(item);
+    if (item.highest_bid) return Number(item.highest_bid);
+    if (auction.current_bid) return Number(auction.current_bid);
+    if (auction.starting_bid) return Number(auction.starting_bid);
+    if (auction.highest_bid) return Number(auction.highest_bid);
+    return 0;
+  };
+
+    const getWatchers = (item: any) => {
+    const auction = getAuctionObj(item);
+    return auction.watchers || 0;
+  };
+
+  // Helper to get auction status
+  
+
+
 
   useEffect(() => {
     if (!auction) return;
@@ -784,6 +832,77 @@ useEffect(() => {
                       </CardContent>
                       </Card>
 
+                       {(stat === 'active' || stat === 'ending_soon') && (
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Gavel className="h-5 w-5 text-primary" />
+                    Place Your Bid
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bidAmount">Bid Amount</Label>
+                    <div className="flex gap-2">
+              <input
+  type="number"
+  min={auction.current_bid || auction.starting_bid}
+  value={bid_amount}
+  onChange={(e) => setAmount(prevAmount => Number(e.target.value))}
+  className="border rounded px-3 py-2 w-full text-black"
+  placeholder="Enter your bid amount"
+/>
+
+                      <Button
+                        variant="outline"
+                        onClick={handleIncrementBid}
+                        className="gap-1"
+                      >
+                        <Plus className="h-4 w-4" />
+                        ${auction.bid_increment}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Minimum bid: ${minNextBid.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={handlePlaceBid}
+                    disabled={bidLoading || bid_amount < minNextBid}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {bidLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Placing Bid...
+                      </>
+                    ) : (
+                      <>
+                        <Gavel className="h-4 w-4 mr-2" />
+                        Place Bid ${bid_amount.toLocaleString()}
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Auto bid  */}
+                  <Button 
+                    onClick={() => setShowAutoBidPanel((prev) => !prev)}
+                    
+                    className="w-full"
+                    size="lg"
+                  >
+                  <>
+                        <Gavel className="h-4 w-4 mr-2" />
+                      Auto Bid ${bid_amount.toLocaleString()}
+                      </>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+
                       {/* Bid History */}
                       <Card className="shadow-lg border-0">
                         <CardHeader>
@@ -857,76 +976,7 @@ useEffect(() => {
               </Card>
     )}
 
-            {(stat === 'active' || stat === 'ending_soon') && (
-              <Card className="shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Gavel className="h-5 w-5 text-primary" />
-                    Place Your Bid
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bidAmount">Bid Amount</Label>
-                    <div className="flex gap-2">
-              <input
-  type="number"
-  min={auction.current_bid || auction.starting_bid}
-  value={bid_amount}
-  onChange={(e) => setAmount(Number(e.target.value))}
-  className="border rounded px-3 py-2 w-full text-black"
-  placeholder="Enter your bid amount"
-/>
-
-                      <Button
-                        variant="outline"
-                        onClick={handleIncrementBid}
-                        className="gap-1"
-                      >
-                        <Plus className="h-4 w-4" />
-                        ${auction.bid_increment}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Minimum bid: ${minNextBid.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <Button 
-                    onClick={handlePlaceBid}
-                    disabled={bidLoading || bid_amount < minNextBid}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {bidLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Placing Bid...
-                      </>
-                    ) : (
-                      <>
-                        <Gavel className="h-4 w-4 mr-2" />
-                        Place Bid ${bid_amount.toLocaleString()}
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Auto bid  */}
-                  <Button 
-                    onClick={setShowAutoBidPanel((prev) => !prev)}
-                    disabled={bidLoading || bid_amount < minNextBid}
-                    className="w-full"
-                    size="lg"
-                  >
-                  <>
-                        <Gavel className="h-4 w-4 mr-2" />
-                      Auto Bid ${bid_amount.toLocaleString()}
-                      </>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
+           
       {/* <div className="mb-4">
         
   <input
@@ -1078,8 +1128,11 @@ useEffect(() => {
                 </CardContent>
               </Card>
             )}
+
+            
           </div>
         </div>
+        
       </div>
     </div>
   );

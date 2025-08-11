@@ -303,6 +303,12 @@ export interface Auction {
   }>;
   media_url?: string; 
   media_path?: string; // Assuming this is the path to the media
+  winner?: {
+    id: number;
+    name: string;
+    email: string;
+    type: string;
+  } | null;
   user: {
     id: number;
     name: string;

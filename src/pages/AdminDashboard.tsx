@@ -76,6 +76,27 @@ const AdminDashboard = () => {
   const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Function to fetch auctions that can be called multiple times
+  const fetchAuctions = async () => {
+    setLoadingAuctions(true);
+    const token = getCookie('token');
+    if (!token) return;
+    
+    const response = await adminAPI.fetchAuctions_Admin(token);
+    if (response.success && Array.isArray(response.data)) {
+      setAuctions(response.data);
+      console.log("Auctions refreshed:", response.data.length);
+    } else {
+      setAuctions([]);
+      toast({
+        title: "Failed to fetch auctions",
+        description: response.message || "Could not load auction data",
+        variant: "destructive",
+      });
+    }
+    setLoadingAuctions(false);
+  };
+
   useEffect(() => {
     const fetchUser = async () => {
       const token = getCookie('token');
@@ -88,27 +109,65 @@ const AdminDashboard = () => {
     };
     fetchUser();
 
-    // Add this new effect to fetch auctions
-    const fetchAuctions = async () => {
-      setLoadingAuctions(true);
-      const token = getCookie('token');
-      if (!token) return;
-      
-      const response = await adminAPI.fetchAuctions_Admin(token);
-      if (response.success && Array.isArray(response.data)) {
-        setAuctions(response.data);
-      } else {
-        setAuctions([]);
-        toast({
-          title: "Failed to fetch auctions",
-          description: response.message || "Could not load auction data",
-          variant: "destructive",
-        });
-      }
-      setLoadingAuctions(false);
-    };
-    
+    // Initial fetch of auctions
     fetchAuctions();
+    
+    // Set up event listeners for auction updates
+    let handleAuctionCreated: ((event: Event) => void) | null = null;
+    let handleAuctionUpdated: ((event: Event) => void) | null = null;
+    let handleAuctionDeleted: ((event: Event) => void) | null = null;
+    let cleanupEventListeners: (() => void) | null = null;
+    
+    // Import auction events
+    import("@/lib/utils").then(({ AUCTION_EVENTS }) => {
+      // Listen for auction events
+      handleAuctionCreated = () => {
+        console.log("Auction created event received, refreshing auctions...");
+        fetchAuctions();
+      };
+      
+      handleAuctionUpdated = () => {
+        console.log("Auction updated event received, refreshing auctions...");
+        fetchAuctions();
+      };
+      
+      handleAuctionDeleted = () => {
+        console.log("Auction deleted event received, refreshing auctions...");
+        fetchAuctions();
+      };
+      
+      // Add event listeners
+      window.addEventListener(AUCTION_EVENTS.AUCTION_CREATED, handleAuctionCreated);
+      window.addEventListener(AUCTION_EVENTS.AUCTION_UPDATED, handleAuctionUpdated);
+      window.addEventListener(AUCTION_EVENTS.AUCTION_DELETED, handleAuctionDeleted);
+      
+      // Store cleanup function
+      cleanupEventListeners = () => {
+        if (handleAuctionCreated) {
+          window.removeEventListener(AUCTION_EVENTS.AUCTION_CREATED, handleAuctionCreated);
+        }
+        if (handleAuctionUpdated) {
+          window.removeEventListener(AUCTION_EVENTS.AUCTION_UPDATED, handleAuctionUpdated);
+        }
+        if (handleAuctionDeleted) {
+          window.removeEventListener(AUCTION_EVENTS.AUCTION_DELETED, handleAuctionDeleted);
+        }
+      };
+    });
+    
+    // Set up polling interval as a fallback (every 30 seconds)
+    const intervalId = setInterval(() => {
+      console.log("Auto-refreshing auctions...");
+      fetchAuctions();
+    }, 30000); // 30 seconds
+    
+    // Clean up interval and event listeners on component unmount
+    return () => {
+      clearInterval(intervalId);
+      if (cleanupEventListeners) {
+        cleanupEventListeners();
+      }
+    };
   }, []);
 
   const sidebarItems = [

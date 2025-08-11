@@ -37,26 +37,29 @@ const AuctionListing = () => {
   const [filterBy, setFilterBy] = useState("all");
   const [watchedItems, setWatchedItems] = useState<Set<number>>(new Set());
 
-  // useEffect(() => {
-  //   const getAuction = async () => {
-  //     const token = getCookie('token');
-  //     if (!token) return;
+  useEffect(() => {
+    const getAuction = async () => {
+      const token = getCookie('token');
+      if (!token) return;
 
-  //     try {
-  //       const result = await auctionAPI.fetchAuctions(token);
-  //       // result.data is an array of { auction, total_bids, ... }
-  //       setAuctions(result.data || []);
-  //       setLoading(false);
-  //       console.log("Fetched result:", result);
-  //     } catch (error) {
-  //       setLoading(false);
-  //       console.error("Error fetching bids:", error);
-  //     }
-  //   };
+      try {
+        const result = await auctionAPI.fetchAuctions(token);
+        // result.data is an array of { auction, total_bids, ... }
+        setAuctions(result.data || []);
+        setLoading(false);
+        console.log("Fetched result:", result);
+      } catch (error) {
+        setLoading(false);
+        console.error("Error fetching bids:", error);
+      }
+    };
 
-  //   getAuction();
-  // }, []);
+    getAuction();
+  }, []);
 
+  console.log('auctionsss', auctions);
+
+  
   // Create a custom hook for auction data fetching
   const fetchAllAuctionCategories = async () => {
     const token = getCookie('token');
