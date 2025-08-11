@@ -36,7 +36,8 @@ import {
   Share2,
   Timer,
   Trophy,
-  AlertCircle
+  AlertCircle,
+  History
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { adminAPI, Auction, auctionAPI, Bidder, BiddersResponse } from "@/lib/api";
@@ -49,6 +50,7 @@ import { useAuctionStatus } from "./ActiveAuction";
 import AuctionTimer from "./AuctionTimer";
 // @ts-ignore
 import confetti from 'canvas-confetti';
+import AuctionTimeline from "./AuctionTimeline";
 
 interface Bid {
   id: number;
@@ -108,33 +110,30 @@ const AuctionDetailsAdmins = () => {
 
   
  
-  // Fetch auction details from API
-  useEffect(() => {
-    const getAuctionDetails = async () => {
-      const token = getCookie('token');
-      if (!token || !id) return;
-
-      try {
-        const result = await auctionAPI.fetchAuctionById_Admin(Number(id), token);
-        if (result && result.data) {
-          // Handle both possible response structures
-          const apiAuction = (result.data as any).auction || result.data;
-          // Parse promotional_tags if it's a stringified array
-          let tags: string[] = [];
-          try {
-            tags = apiAuction.promotional_tags
-              ? (typeof apiAuction.promotional_tags === 'string' 
-                  ? JSON.parse(apiAuction.promotional_tags) 
-                  : apiAuction.promotional_tags)
-              : [];
-          } catch {
-            tags = [];
-          }
+  // Function to fetch auction details from API
+  const fetchAuctionDetails = async () => {
+    const token = getCookie('token');
+    if (!token || !id) return;
+    
+    setLoading(true);
+    try {
+      const result = await auctionAPI.fetchAuctionById_Admin(Number(id), token);
+      if (result && result.data) {
+        // Handle both possible response structures
+        const apiAuction = (result.data as any).auction || result.data;
+        // Parse promotional_tags if it's a stringified array
+        let tags: string[] = [];
+        try {
+          tags = apiAuction.promotional_tags
+            ? (typeof apiAuction.promotional_tags === 'string' 
+                ? JSON.parse(apiAuction.promotional_tags) 
+                : apiAuction.promotional_tags)
+            : [];
+        } catch {
+          tags = [];
+        }
                      // Debug logging
-           console.log("API Auction data:", apiAuction);
-           console.log("API Auction media:", apiAuction.media);
-           console.log("First media item:", apiAuction.media?.[0]);
-           console.log("Media URL:", apiAuction.media?.[0]?.media_url);
+         
 
            const auctionObject = {
             id: apiAuction.id,
@@ -169,15 +168,27 @@ const AuctionDetailsAdmins = () => {
 
            setAuction(auctionObject);
 
+          // Set bid data with highest bid information
+          if (result.data.highest_bid && result.data.highest_bidder) {
+            setBidData({
+              ...bidData,
+              highest_bid: {
+                amount: Number(result.data.highest_bid),
+                identity: result.data.highest_bidder.name
+              },
+              total_active_bidders: result.data.total_active_bidders || 0
+            });
+          }
+
           // Set bid history if available
           if ((apiAuction as any).bids && Array.isArray((apiAuction as any).bids)) {
             setBidHistory(
               (apiAuction as any).bids.map((b: any, idx: number) => ({
                 id: b.id || idx,
-                bidder: b.bidder_name || "Bidder",
-                bid_amount: Number(b.bid_amount),
+                bidder: b.bidder?.name || b.bidder_name || "Bidder",
+                bid_amount: Number(b.amount || b.bid_amount),
                 time: b.created_at || new Date().toISOString(),
-                isAutoBid: b.is_auto_bid || false,
+                isAutoBid: b.is_auto === "1" || b.is_auto_bid || false,
               }))
             );
           } else {
@@ -196,8 +207,10 @@ const AuctionDetailsAdmins = () => {
       }
     };
 
-    getAuctionDetails();
-  }, [id, toast]);
+  // Call fetchAuctionDetails when component mounts or id changes
+  useEffect(() => {
+    fetchAuctionDetails();
+  }, [id]);
 
   // console.log("Fetched auction result:", result);
 
@@ -292,7 +305,7 @@ const handleImageError = (index) => {
 
  const handleIncrementBid = () => {
   if (!auction) return;
-  const currentBid = auction.current_bid || auction.starting_bid;
+  const currentBid = bidData.highest_bid?.amount || auction.current_bid || auction.starting_bid;
   const nextBid = Math.max(bid_amount + auction.bid_increment, currentBid + auction.bid_increment);
   setAmount(nextBid);
 };
@@ -311,7 +324,7 @@ const handleImageError = (index) => {
       return;
     }
 
-    const currentBid = auction.current_bid || auction.starting_bid;
+    const currentBid = bidData.highest_bid?.amount || auction.current_bid || auction.starting_bid;
     const minBid = currentBid + auction.bid_increment;
 
     if (bid_amount < minBid) {
@@ -339,7 +352,7 @@ const handleImageError = (index) => {
           description: `Your bid of $${bid_amount.toLocaleString()} has been placed.`,
         });
 
-        // Optionally update UI...
+        // Update UI with new bid
         const newBid: Bid = {
           id: bidHistory.length + 1,
           bidder: "You",
@@ -347,7 +360,19 @@ const handleImageError = (index) => {
           time: new Date().toISOString(),
         };
         setBidHistory([newBid, ...bidHistory]);
+        
+        // Update auction and bid data
         setAuction({ ...auction, current_bid: bid_amount });
+        setBidData({
+          ...bidData,
+          highest_bid: {
+            amount: bid_amount,
+            identity: "You"
+          }
+        });
+        
+        // Refresh auction data from API to ensure everything is up to date
+        fetchAuctionDetails();
 
         // setAmount(bid_amount + auction.bid_increment);
       } else {
@@ -371,7 +396,7 @@ const handleImageError = (index) => {
   // const handleSetupAutoBid = async () => {
   //   if (!auction || maxAutoBid <= 0) return;
     
-  //   const currentBid = auction.current_bid || auction.starting_bid;
+  //   const currentBid = bidData.highest_bid?.amount || auction.current_bid || auction.starting_bid;
     
   //   if (maxAutoBid <= currentBid) {
   //     toast({
@@ -634,7 +659,7 @@ console.log("Auction media:", auction);
     );
   }
 
-  const currentBid = auction.current_bid || auction.starting_bid;
+  const currentBid = bidData.highest_bid?.amount || auction.current_bid || auction.starting_bid;
   const minNextBid = currentBid + auction.bid_increment;
   const auctionStatus = auction.status || getAuctionStatus(auction);
   
@@ -741,138 +766,99 @@ console.log("Auction media:", auction);
               </CardContent>
             </Card>
 
-            {/* Auction Details Tabs */}
+            {/* Auction Details Card */}
             <Card className="shadow-lg border-0">
-              <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="bids">Bid History ({bidHistory.length})</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="details" className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Starting Bid</p>
-                          <p className="text-xl font-bold">${auction.starting_bid.toLocaleString()}</p>
-                        </div>
+              <CardHeader>
+                <CardTitle className="text-lg">Auction Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Starting Bid</p>
+                        <p className="text-xl font-bold">${auction.starting_bid.toLocaleString()}</p>
                       </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Reserve Price</p>
-                          <p className="text-xl font-bold">${auction.reserve_price?.toLocaleString() || "Not Set"}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <Plus className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Bid Increment</p>
-                          <p className="text-xl font-bold">${auction.bid_increment.toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Plus className="h-5 w-5 text-primary" />
-                        <div >
-                          <p className="text-sm font-medium text-muted-foreground">Current Highest Bidder</p>
-                          <div className="flex gap-3 mt-1">
-                            <p className="text-lg font-bold">{bidData.highest_bid?.identity || "Unknown"}</p> -
-                           <p>{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
-                          </div>
-                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Reserve Price</p>
+                        <p className="text-xl font-bold">${auction.reserve_price?.toLocaleString() || "Not Set"}</p>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                          <p className="font-medium">
-                            {new Date(auction.auction_start_time).toLocaleString()}
-                          </p>
+                    <div className="flex items-center gap-3">
+                      <Plus className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Bid Increment</p>
+                        <p className="text-xl font-bold">${auction.bid_increment.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Plus className="h-5 w-5 text-primary" />
+                      <div >
+                        <p className="text-sm font-medium text-muted-foreground">Current Highest Bidder</p>
+                        <div className="flex gap-3 mt-1">
+                          <p className="text-lg font-bold">Bidder{auction.id || "Unknown"}</p> -
+                         <p>{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <Timer className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">End Time</p>
-                          <p className="font-medium">
-                            {new Date(auction.auction_end_time).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <Eye className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Watchers</p>
-                          <p className="font-medium">{auction.watchers || 0}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <Eye className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Active Bidders</p>
-                          <p className="font-medium">NO: {bidData.total_active_bidders || 0}</p>
-                        </div>
-                      </div>
-                     
                     </div>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="bids" className="p-6">
+
                   <div className="space-y-4">
-                    {bidHistory.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Bidder</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Time</TableHead>
-                              <TableHead>Type</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {bidHistory.map((bid) => (
-                              <TableRow key={bid.id}>
-                                <TableCell className="font-medium">{bid.bidder}</TableCell>
-                                <TableCell className="font-bold text-primary">
-                                  ${bid.bid_amount.toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {new Date(bid.time).toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
-                                    {bid.isAutoBid ? "Auto" : "Manual"}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Gavel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="font-medium mb-1">No bids yet</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Be the first to place a bid on this auction
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                        <p className="font-medium">
+                          {new Date(auction.auction_start_time).toLocaleString()}
                         </p>
                       </div>
-                    )}
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Timer className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">End Time</p>
+                        <p className="font-medium">
+                          {new Date(auction.auction_end_time).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Eye className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Watchers</p>
+                        <p className="font-medium">{auction.watchers || 0}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Eye className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Active Bidders</p>
+                        <p className="font-medium">NO: {bidData.total_active_bidders || 0}</p>
+                      </div>
+                    </div>
+                   
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent>
+                  <AuctionTimeline
+  auctionStart={auction.auction_start_time}
+  auctionEnd={auction.auction_end_time}
+/>
+
+              </CardContent>
             </Card>
           </div>
 
@@ -908,6 +894,7 @@ console.log("Auction media:", auction);
     </div>
                 </div>
 
+                
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Watchers</span>
                   <div className="flex items-center gap-1">
@@ -915,8 +902,25 @@ console.log("Auction media:", auction);
                     <span className="font-medium">{bidData.total_active_bidders || 0}</span>
                   </div>
                 </div>
+
+                 <Separator />
+                 
+                 <div class="flex gap-3 flex-col">
+  <button className="bg-purple-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+    Exit
+  </button>
+  <button className="bg-purple-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+    Extend
+  </button>
+  <button className="bg-purple-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+    Cancel
+  </button>
+</div>
+
               </CardContent>
             </Card>
+
+                  
 
             {/* Bidding Panel */}
             
@@ -937,6 +941,60 @@ console.log("Auction media:", auction);
                 </CardContent>
               </Card>
             )}
+            
+            {/* Bid History */}
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5 text-primary" />
+                  Bid History
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  {bidHistory.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Bidder</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Type</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bidHistory.map((bid) => (
+                            <TableRow key={bid.id}>
+                              <TableCell className="font-medium">Bidder{bid.id}</TableCell>
+                              <TableCell className="font-bold text-primary">
+                                ${bid.bid_amount.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {new Date(bid.time).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
+                                  {bid.isAutoBid ? "Auto" : "Manual"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Gavel className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <h3 className="font-medium mb-1">No bids yet</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Be the first to place a bid on this auction
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 

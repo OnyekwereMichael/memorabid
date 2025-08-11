@@ -112,7 +112,7 @@ const AdminDashboard = () => {
   }, []);
 
   const sidebarItems = [
-    { title: "Auctions", url: "/admin-dashboard/auctions", icon: Gavel },
+    { title: "Auctions", url: "/admin-dashboard", icon: Gavel },
   ];
 
   const handleLogout = async () => {
@@ -325,6 +325,10 @@ const AdminDashboard = () => {
         media: [],
       });
       setCreateOpen(false);
+      
+      // Emit auction created event to trigger refresh in AuctionListing
+      const { emitAuctionEvent, AUCTION_EVENTS } = await import("@/lib/utils");
+      emitAuctionEvent(AUCTION_EVENTS.AUCTION_CREATED, response.data);
     } else {
       toast({
         title: "Auction Creation Failed",

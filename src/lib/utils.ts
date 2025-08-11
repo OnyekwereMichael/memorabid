@@ -5,6 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Custom event system for auction updates
+export const AUCTION_EVENTS = {
+  AUCTION_CREATED: 'auction-created',
+  AUCTION_UPDATED: 'auction-updated',
+  AUCTION_DELETED: 'auction-deleted'
+};
+
+// Helper to emit auction events
+export function emitAuctionEvent(eventName: string, data?: any) {
+  const event = new CustomEvent(eventName, { detail: data });
+  window.dispatchEvent(event);
+}
+
 export function setCookie(name: string, value: string, days = 7) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;

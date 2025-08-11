@@ -57,67 +57,106 @@ const AuctionListing = () => {
   //   getAuction();
   // }, []);
 
-  // Unified auction data fetching
-  useEffect(() => {
-    const fetchAllAuctionCategories = async () => {
-      const token = getCookie('token');
-      if (!token) {
-        console.error("No token found. User might not be logged in.");
-        setLoading(false);
-        return;
-      }
+  // Create a custom hook for auction data fetching
+  const fetchAllAuctionCategories = async () => {
+    const token = getCookie('token');
+    if (!token) {
+      console.error("No token found. User might not be logged in.");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Create an array to store all auction data
-        let allAuctions: any[] = [];
-        // Create a Set to track unique auction IDs
-        const uniqueAuctionIds = new Set<number>();
-        
-        // Fetch all categories one by one to ensure we get data
-        const categories = ["live", "upcoming", "past", "ending_soon"];
-        
-        for (const category of categories) {
-          try {
-            const result = await auctionAPI.fetchAuctionsByCategory(category, token);
-            if (result.success && result.data && Array.isArray(result.data)) {
-              console.log(`Fetched ${category} auctions:`, result.data.length);
+    setLoading(true);
+    try {
+      // Create an array to store all auction data
+      let allAuctions: any[] = [];
+      // Create a Set to track unique auction IDs
+      const uniqueAuctionIds = new Set<number>();
+      
+      // Fetch all categories one by one to ensure we get data
+      const categories = ["live", "upcoming", "past", "ending_soon"];
+      
+      for (const category of categories) {
+        try {
+          const result = await auctionAPI.fetchAuctionsByCategory(category, token);
+          if (result.success && result.data && Array.isArray(result.data)) {
+            console.log(`Fetched ${category} auctions:`, result.data.length);
+            
+            // Filter out duplicates before adding to allAuctions
+            const newAuctions = result.data.filter(item => {
+              const auction = getAuctionObj(item);
+              const auctionId = auction.id;
               
-              // Filter out duplicates before adding to allAuctions
-              const newAuctions = result.data.filter(item => {
-                const auction = getAuctionObj(item);
-                const auctionId = auction.id;
-                
-                // If this auction ID is already in our set, it's a duplicate
-                if (uniqueAuctionIds.has(auctionId)) {
-                  return false;
-                }
-                
-                // Otherwise, add it to our set and keep it
-                uniqueAuctionIds.add(auctionId);
-                return true;
-              });
+              // If this auction ID is already in our set, it's a duplicate
+              if (uniqueAuctionIds.has(auctionId)) {
+                return false;
+              }
               
-              // Add unique auctions to our combined array
-              allAuctions = [...allAuctions, ...newAuctions];
-            } else {
-              console.warn(`No data or invalid data for ${category} auctions:`, result);
-            }
-          } catch (categoryError) {
-            console.error(`Error fetching ${category} auctions:`, categoryError);
+              // Otherwise, add it to our set and keep it
+              uniqueAuctionIds.add(auctionId);
+              return true;
+            });
+            
+            // Add unique auctions to our combined array
+            allAuctions = [...allAuctions, ...newAuctions];
+          } else {
+            console.warn(`No data or invalid data for ${category} auctions:`, result);
           }
+        } catch (categoryError) {
+          console.error(`Error fetching ${category} auctions:`, categoryError);
         }
-        
-        // Set all auctions at once
-        console.log("All auctions fetched (unique):", allAuctions.length, allAuctions);
-        setAuctions(allAuctions);
-      } catch (error) {
-        console.error("Error in main auction fetching:", error);
-      } finally {
-        setLoading(false);
+      }
+      
+      // Set all auctions at once
+      console.log("All auctions fetched (unique):", allAuctions.length, allAuctions);
+      setAuctions(allAuctions);
+    } catch (error) {
+      console.error("Error in main auction fetching:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Set up polling and event listeners for new auctions
+  useEffect(() => {
+    // Initial fetch
+    fetchAllAuctionCategories();
+    
+    let handleAuctionCreated: ((event: Event) => void) | null = null;
+    let cleanupEventListener: (() => void) | null = null;
+    
+    // Import auction events
+    import("@/lib/utils").then(({ AUCTION_EVENTS }) => {
+      // Listen for auction created events
+      handleAuctionCreated = () => {
+        console.log("Auction created event received, refreshing auctions...");
+        fetchAllAuctionCategories();
+      };
+      
+      // Add event listener
+      window.addEventListener(AUCTION_EVENTS.AUCTION_CREATED, handleAuctionCreated);
+      
+      // Store cleanup function
+      cleanupEventListener = () => {
+        if (handleAuctionCreated) {
+          window.removeEventListener(AUCTION_EVENTS.AUCTION_CREATED, handleAuctionCreated);
+        }
+      };
+    });
+    
+    // Set up polling interval as a fallback (every 60 seconds)
+    const intervalId = setInterval(() => {
+      console.log("Auto-refreshing auctions...");
+      fetchAllAuctionCategories();
+    }, 60000); // 60 seconds
+    
+    // Clean up interval and event listener on component unmount
+    return () => {
+      clearInterval(intervalId);
+      if (cleanupEventListener) {
+        cleanupEventListener();
       }
     };
-
-    fetchAllAuctionCategories();
   }, []);
   
   // Debug log to check auctions state
@@ -379,8 +418,11 @@ console.log('past', pastAuctions );
                                   {auction.media && auction.media.length > 0 ? (
                                     <img src={auction.media[0].media_url} alt={auction.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <Gavel className="h-12 w-12 text-muted-foreground" />
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                      <div className="text-center p-4">
+                                        <p className="font-bold text-lg text-primary truncate">{auction.title.substring(0, 20)}{auction.title.length > 20 ? '...' : ''}</p>
+                                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{auction.description}</p>
+                                      </div>
                                     </div>
                                   )}
                                   <Button variant="ghost" size="sm" className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/90 hover:bg-white">

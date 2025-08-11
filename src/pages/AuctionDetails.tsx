@@ -36,7 +36,8 @@ import {
   Share2,
   Timer,
   Trophy,
-  AlertCircle
+  AlertCircle,
+  History
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { adminAPI, Auction, auctionAPI } from "@/lib/api";
@@ -159,12 +160,24 @@ const AuctionDetails = () => {
             setBidHistory(
               apiAuction.bids.map((b: any, idx: number) => ({
                 id: b.id || idx,
-                bidder: b.bidder_name || "Bidder",
-                bid_amount: Number(b.bid_amount),
+                bidder: b.bidder?.name || "Bidder",
+                bid_amount: Number(b.amount),
                 time: b.created_at || new Date().toISOString(),
-                isAutoBid: b.is_auto_bid || false,
+                isAutoBid: b.is_auto === "1" || false,
               }))
             );
+            
+            // Set bid data for display
+            if (result.data.highest_bid) {
+              setBidData({
+                highest_bid: {
+                  amount: Number(result.data.highest_bid),
+                  identity: result.data.highest_bidder?.name || 'None'
+                },
+                total_bids: apiAuction.bids.length,
+                total_active_bidders: result.data.total_active_bidders || apiAuction.bids.length
+              });
+            }
           } else {
             setBidHistory([]);
           }
@@ -542,7 +555,7 @@ useEffect(() => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className=" mx-auto p-4 sm:p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -614,12 +627,10 @@ useEffect(() => {
             {/* Auction Details Tabs */}
             <Card className="shadow-lg border-0">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="bids">Bid History ({bidHistory.length})</TabsTrigger>
-                </TabsList>
+                
                 
                 <TabsContent value="details" className="p-6">
+                    <p className="text-2xl font-semibold mb-4">Details</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
@@ -655,6 +666,7 @@ useEffect(() => {
                           </div>
                         </div>
                       </div>
+
                     </div>
 
                     <div className="space-y-4">
@@ -698,53 +710,10 @@ useEffect(() => {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="bids" className="p-6">
-                  <div className="space-y-4">
-                    {bidHistory.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Bidder</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Time</TableHead>
-                              <TableHead>Type</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {bidHistory.map((bid) => (
-                              <TableRow key={bid.id}>
-                                <TableCell className="font-medium">{bid.bidder}</TableCell>
-                                <TableCell className="font-bold text-primary">
-                                  ${bid.bid_amount.toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {new Date(bid.time).toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
-                                    {bid.isAutoBid ? "Auto" : "Manual"}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Gavel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="font-medium mb-1">No bids yet</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Be the first to place a bid on this auction
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
               </Tabs>
             </Card>
           </div>
+          
 
           {/* Sidebar - Bidding Panel */}
           <div className="space-y-6">
@@ -760,14 +729,16 @@ useEffect(() => {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Current Highest Bid</p>
                   <p className="text-3xl font-bold text-primary">
-                    ${currentBid.toLocaleString()}
+                    ${bidData.highest_bid?.amount ? bidData.highest_bid.amount.toLocaleString() : currentBid.toLocaleString()}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {bidHistory.length} bid{bidHistory.length !== 1 ? 's' : ''}
                   </p>
                 </div>
                 
-                <Separator />
+               
+
+                      <Separator />
                 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Time Remaining</p>
@@ -787,6 +758,85 @@ useEffect(() => {
                 </div>
               </CardContent>
             </Card>
+
+             <Separator />
+
+                
+                      {/* your currewnt bid  */}
+                      <Card>
+                           <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  Your Current Bid
+                </CardTitle>
+              </CardHeader>
+                        <CardContent className="space-y-4">
+                      <div className="flex items-center gap-3 justify-center ">
+                        {/* <Plus className="h-5 w-5 text-primary" /> */}
+                        <div >
+                          <p className="text-sm font-medium text-muted-foreground text-center">Your Current Bid</p>
+                          <div className="flex gap-3 mt-1">
+                            {/* <p className="text-lg font-bold">{bidData.highest_bid?.identity || "Unknown"}</p> - */}
+                           <p className="text-center mt-3">{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
+                          </div>
+                        </div>
+                      </div>
+                      </CardContent>
+                      </Card>
+
+                      {/* Bid History */}
+                      <Card className="shadow-lg border-0">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <History className="h-5 w-5 text-primary" />
+                            Bid History
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-4">
+                            {bidHistory.length > 0 ? (
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Bidder</TableHead>
+                                      <TableHead>Amount</TableHead>
+                                      <TableHead>Time</TableHead>
+                                      <TableHead>Type</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {bidHistory.map((bid) => (
+                                      <TableRow key={bid.id}>
+                                        <TableCell className="font-medium">Bidder{bid.id}</TableCell>
+                                        <TableCell className="font-bold text-primary">
+                                          ${bid.bid_amount.toLocaleString()}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                          {new Date(bid.time).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
+                                            {bid.isAutoBid ? "Auto" : "Manual"}
+                                          </Badge>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Gavel className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                <h3 className="font-medium mb-1">No bids yet</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Be the first to place a bid on this auction
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
 
             {/* Bidding Panel */}
 {/* upcoming bid */}
@@ -860,11 +910,24 @@ useEffect(() => {
                       </>
                     )}
                   </Button>
+
+                  {/* Auto bid  */}
+                  <Button 
+                    onClick={setShowAutoBidPanel((prev) => !prev)}
+                    disabled={bidLoading || bid_amount < minNextBid}
+                    className="w-full"
+                    size="lg"
+                  >
+                  <>
+                        <Gavel className="h-4 w-4 mr-2" />
+                      Auto Bid ${bid_amount.toLocaleString()}
+                      </>
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         
   <input
     type="checkbox"
@@ -876,7 +939,7 @@ useEffect(() => {
   <label htmlFor="autoBidToggle" className="text-sm font-medium">
     Enable Auto-Bid
   </label>
-</div>
+</div> */}
 
 
 
