@@ -71,9 +71,9 @@ const AuctionPayloadExample: React.FC = () => {
               {auctionFormData.media.length} image(s) selected. Only the first one will be used.
             </p>
             <ul className="text-xs text-gray-600 mt-1">
-              {Array.from(auctionFormData.media).map((file, index) => (
+              {auctionFormData.media.map((file, index) => (
                 <li key={index}>
-                  {index === 0 ? <strong>{(file as File).name} (will be used)</strong> : (file as File).name}
+                  {index === 0 ? <strong>{file.name} (will be used)</strong> : file.name}
                 </li>
               ))}
             </ul>

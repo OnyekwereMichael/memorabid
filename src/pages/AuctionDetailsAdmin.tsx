@@ -196,12 +196,12 @@ const AuctionDetailsAdmins = () => {
            setAuction(auctionObject);
 
           // Set bid data with highest bid information and winner if available
-          if (result.data.highest_bid && result.data.highest_bidder) {
+          if (result.data.highest_bid) {
             setBidData({
               ...bidData,
               highest_bid: {
                 amount: Number(result.data.highest_bid),
-                identity: result.data.highest_bidder.name
+                identity: result.data.highest_bid.bidder_name || 'Unknown'
               },
               total_active_bidders: result.data.total_active_bidders || 0
             });
@@ -954,7 +954,7 @@ console.log("Auction media:", auction);
 
                  <Separator />
                  
-                 <div class="flex gap-3 flex-col">
+                 <div className="flex gap-3 flex-col">
   <button className="bg-purple-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-purple-700 transition">
     Exit
   </button>

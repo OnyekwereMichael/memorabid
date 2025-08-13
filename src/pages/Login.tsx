@@ -81,7 +81,7 @@ const Login = () => {
       <Navbar />
       <div className="flex min-h-[calc(100vh-64px)]">
         {/* Left Panel */}
-        <div className="hidden  md:flex flex-col pt-8 items-start w-[35%] bg-[#4B187C] px-8  text-white min-h-full">
+        <div className="hidden lg:flex flex-col pt-8 items-start w-full lg:w-[35%] bg-[#4B187C] px-4 sm:px-8 text-white min-h-full">
           <h1 className="text-3xl font-bold mb-4">Welcome to Memorabid</h1>
           <p className="mb-8 text-lg opacity-90 max-w-md">
             A platform designed to help you ace interviews with personalized practice, instant feedback, and expert guidance.
@@ -95,16 +95,16 @@ const Login = () => {
           <span className="font-bold text-base">– Ada, Independent Seller</span>
         </div>
         {/* Right Panel */}
-        <div className="flex flex-col pt-8 items-center w-full md:w-[65%] px-8 max-sm:px-2  min-h-full">
+        <div className="flex flex-col pt-4 sm:pt-8 items-center w-full lg:w-[65%] px-4 sm:px-8 min-h-full">
           <div className="w-full ">
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-[#A259FF] mb-2">Hi!!</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#A259FF] mb-2">Hi!!</h2>
               <p className="text-muted-foreground mb-6">Enter details to login.</p>
             </div>
             <Card className="shadow-elegant border-0 bg-background/80">
-            <CardContent className="py-8 px-8 max-sm:px-4 max-sm:py-6">
+            <CardContent className="py-6 px-4 sm:py-8 sm:px-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/30 p-1">
+                <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 bg-muted/30 p-1">
                     <TabsTrigger value="user" className="flex items-center space-x-2 data-[state=active]:shadow-soft text-xs">
                     <User className="h-4 w-4" />
                     <span>User</span>

@@ -15,7 +15,7 @@ const Landing = () => {
       <section className="relative py-16 sm:py-20 md:py-32 lg:py-10 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-60"></div>
         <div className="relative max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
             {/* Content */}
             <div className="text-center lg:text-left space-y-8">
               <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary/20 to-primary-glow/20 backdrop-blur-sm border border-primary/20 rounded-full shadow-glow">
@@ -42,7 +42,7 @@ const Landing = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 lg:gap-6 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4 lg:gap-6 justify-center lg:justify-start items-center sm:items-start">
                 <Button asChild size="lg" className="text-lg px-10 py-7 shadow-elegant hover:shadow-glow transition-all duration-500 group">
                   <Link to="/login" className="flex items-center gap-2">
                     Start Bidding
@@ -134,7 +134,7 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="group text-center hover:shadow-feature transition-all duration-300 border-0 shadow-card">
               <CardHeader className="pb-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary-glow/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
@@ -184,7 +184,7 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             {[
               {
                 step: "01",
@@ -232,7 +232,7 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {[
               {
                 title: "1983 World Cup Winning Bat",
@@ -316,7 +316,7 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8 max-sm:grid-cols-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {[
               { icon: <Shield className="h-8 w-8" />, title: "256-bit SSL", description: "Bank-level security" },
               { icon: <CheckCircle className="h-8 w-8" />, title: "100% Authentic", description: "Verified by experts" },
@@ -342,7 +342,7 @@ const Landing = () => {
           <p className="text-[16px] text-muted-foreground mb-12 max-w-2xl mx-auto">
             Join ECC today and discover rare cricket collectibles from trusted sellers worldwide
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
             <Button asChild size="lg" className="text-lg px-10 py-7 shadow-elegant">
               <Link to="/register">Create Free Account</Link>
             </Button>

@@ -62,7 +62,7 @@ const AuctionDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [auction, setAuction] = useState<Auction | null>(null);
-    const [auctions, setAuctions] = useState<any[]>([]); 
+  const [auctions, setAuctions] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
   const [bid_amount, setAmount] = useState<number>(0);
   const [maxAutoBid, setMaxAutoBid] = useState<number>(0);
@@ -73,10 +73,9 @@ const AuctionDetails = () => {
   const [bidHistory, setBidHistory] = useState<Bid[]>([]);
   const [bidData, setBidData] = useState<{ [key: string]: any }>({});
   const [showAutoBidPanel, setShowAutoBidPanel] = useState(false);
-   const [startHours, setStartHours] = useState(0);
+  const [startHours, setStartHours] = useState(0);
   const [endHours, setEndHours] = useState(0);
   const [watchedItems, setWatchedItems] = useState<Set<number>>(new Set());
-
 
   
   useEffect(() => {
@@ -86,7 +85,6 @@ const AuctionDetails = () => {
 
       try {
         const result = await auctionAPI.fetchAuctions(token);
-        // result.data is an array of { auction, total_bids, ... }
         setAuctions(result.data || []);
         setLoading(false);
         console.log("Fetched result:", result);
@@ -99,9 +97,7 @@ const AuctionDetails = () => {
     getAuction();
   }, []);
 
-  console.log('auctionsss', auctions);
-
-    const getCurrentBid = (item: any) => {
+  const getCurrentBid = (item: any) => {
     const auction = getAuctionObj(item);
     if (item.highest_bid) return Number(item.highest_bid);
     if (auction.current_bid) return Number(auction.current_bid);
@@ -110,15 +106,10 @@ const AuctionDetails = () => {
     return 0;
   };
 
-    const getWatchers = (item: any) => {
+  const getWatchers = (item: any) => {
     const auction = getAuctionObj(item);
     return auction.watchers || 0;
   };
-
-  // Helper to get auction status
-  
-
-
 
   useEffect(() => {
     if (!auction) return;
@@ -141,13 +132,6 @@ const AuctionDetails = () => {
     return () => clearInterval(interval);
   }, [auction?.auction_start_time, auction?.auction_end_time]);
 
-
-
-
-
-
-  
- 
   // Fetch auction details from API
   useEffect(() => {
     const getAuctionDetails = async () => {
@@ -155,9 +139,9 @@ const AuctionDetails = () => {
       if (!token || !id) return;
 
       try {
-        const result = await auctionAPI.fetchAuctionById(id, token);
-        if (result && result.data && result.data.auction) {
-          const apiAuction = result.data.auction;
+        const result = await auctionAPI.fetchAuctionById(Number(id), token);
+        if (result && result.data) {
+          const apiAuction = result.data;
           // Parse promotional_tags if it's a stringified array
           let tags: string[] = [];
           try {
@@ -167,11 +151,6 @@ const AuctionDetails = () => {
           } catch {
             tags = [];
           }
-          // Debug logging
-          console.log("AuctionDetails - API Auction data:", apiAuction);
-          console.log("AuctionDetails - API Auction media:", apiAuction.media);
-          console.log("AuctionDetails - First media item:", apiAuction.media?.[0]);
-          console.log("AuctionDetails - Media URL:", apiAuction.media?.[0]?.media_url);
 
           const auctionObject = {
             id: apiAuction.id,
@@ -182,7 +161,7 @@ const AuctionDetails = () => {
             bid_increment: isNaN(Number(apiAuction.bid_increment)) ? 100 : Number(apiAuction.bid_increment),
             auction_start_time: apiAuction.auction_start_time,
             auction_end_time: apiAuction.auction_end_time,
-            media: apiAuction.media || [], // Include the media array
+            media: apiAuction.media || [],
             media_url: apiAuction.media_url || "",
             watchers: apiAuction.watchers || 0,
             promotional_tags: tags,
@@ -200,10 +179,6 @@ const AuctionDetails = () => {
               : { id: 0, name: "Unknown", email: "", role: "seller" },
           } as Auction;
 
-          console.log("AuctionDetails - Setting auction object:", auctionObject);
-          console.log("AuctionDetails - Auction media in object:", auctionObject.media);
-          console.log("AuctionDetails - First media in object:", auctionObject.media?.[0]);
-
           setAuction(auctionObject);
 
           // Set bid history if available
@@ -218,16 +193,14 @@ const AuctionDetails = () => {
               }))
             );
             
-            // Set bid data for display
             if (result.data.highest_bid) {
               setBidData({
                 highest_bid: {
                   amount: Number(result.data.highest_bid),
-                  identity: result.data.highest_bidder?.name || 'None'
+                  identity: bidData.highest_bid?.identity || 'None'
                 },
-                highest_bidder: result.data.highest_bidder || { id: 'Unknown' },
-                total_bids: apiAuction.bids.length,
-                total_active_bidders: result.data.total_active_bidders || apiAuction.bids.length
+                total_bids: apiAuction.bids?.length || 0,
+                total_active_bidders: bidData.total_active_bidders || 0
               });
             }
           } else {
@@ -293,73 +266,45 @@ const AuctionDetails = () => {
     }
   };
 
-const isAuctionActive = (startTime, endTime) => {
-  if (!startTime || !endTime) {
-    console.log('Missing start or end time:', { startTime, endTime });
-    return false;
-  }
+  const isAuctionActive = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) {
+      return false;
+    }
 
-  const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    const isActive = now >= start && now <= end;
+    
+    return isActive;
+  };
 
-  console.log('Current local time:', new Date().toLocaleString());
-console.log('Auction start (local):', new Date(startTime).toLocaleString());
-console.log('Auction end (local):', new Date(endTime).toLocaleString());
-
-  
-  const isActive = now >= start && now <= end;
-  console.log('Final result:', isActive);
-  
-  return isActive;
-};
-
-
-
-const active = isAuctionActive(
-  auction?.auction_start_time,
-  auction?.auction_end_time
-);
-
-console.log('Auction data:', {
-  auction_start_time: auction?.auction_start_time,
-  auction_end_time: auction?.auction_end_time,
-  status: auction?.status
-});
-console.log('Auction Active:', active);
+  const active = isAuctionActive(
+    auction?.auction_start_time || "",
+    auction?.auction_end_time || ""
+  );
 
   const getAuctionObj = (item: any) => {
-    // If the item already has auction properties directly, return the item itself
     if (item?.title || item?.auction_start_time || item?.auction_end_time) {
-
       return item;
     }
-    // Otherwise, try to get the auction property (for backward compatibility)
     return item?.auction || {};
   };
-const getAuctionStatuss = (item: any) => {
-  const auction = getAuctionObj(item);
-  const now = new Date();
-  const startTime = new Date(auction.auction_start_time);
-  const endTime = new Date(auction.auction_end_time);
 
-  console.log("Current local time:", now.toString());
-  console.log("Auction start (local):", startTime.toString());
-  console.log("Auction end (local):", endTime.toString());
-  console.log("now < start:", now < startTime);
-  console.log("now > end:", now > endTime);
-  console.log("Time until end (ms):", endTime.getTime() - now.getTime());
+  const getAuctionStatuss = (item: any) => {
+    const auction = getAuctionObj(item);
+    const now = new Date();
+    const startTime = new Date(auction.auction_start_time);
+    const endTime = new Date(auction.auction_end_time);
 
-  if (now < startTime) return 'upcoming';
-  if (now > endTime) return 'ended';
-  if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
-  return 'active';
-};
+    if (now < startTime) return 'upcoming';
+    if (now > endTime) return 'ended';
+    if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
+    return 'active';
+  };
 
-const stat = getAuctionStatuss(auction);
-console.log("Auction status:", stat);
-
-
+  const stat = getAuctionStatuss(auction);
 
   const getAuctionStatus = (auction: Auction) => {
     const now = new Date();
@@ -369,17 +314,16 @@ console.log("Auction status:", stat);
     if (now < startTime) return 'upcoming';
     if (now > endTime) return 'ended';
     
-    // If less than 24 hours left
     if (endTime.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'ending_soon';
     return 'active';
   };
 
- const handleIncrementBid = () => {
-  if (!auction) return;
-  const currentBid = auction.current_bid || auction.starting_bid;
-  const nextBid = Math.max(bid_amount + auction.bid_increment, currentBid + auction.bid_increment);
-  setAmount(nextBid);
-};
+  const handleIncrementBid = () => {
+    if (!auction) return;
+    const currentBid = auction.current_bid || auction.starting_bid;
+    const nextBid = Math.max(bid_amount + auction.bid_increment, currentBid + auction.bid_increment);
+    setAmount(nextBid);
+  };
 
   // Function to refresh auction and bid data
   const refreshAuctionAndBids = async () => {
@@ -388,11 +332,9 @@ console.log("Auction status:", stat);
     if (!token) return;
 
     try {
-      // Fetch auction details
-      const auctionResult = await auctionAPI.fetchAuctionById(id, token);
-      if (auctionResult && auctionResult.data && auctionResult.data.auction) {
-        const apiAuction = auctionResult.data.auction;
-        // Parse promotional_tags if it's a stringified array
+      const auctionResult = await auctionAPI.fetchAuctionById(Number(id), token);
+      if (auctionResult && auctionResult.data) {
+        const apiAuction = auctionResult.data;
         let tags: string[] = [];
         try {
           tags = apiAuction.promotional_tags
@@ -431,7 +373,6 @@ console.log("Auction status:", stat);
 
         setAuction(auctionObject);
 
-        // Set bid history if available
         if (apiAuction.bids && Array.isArray(apiAuction.bids)) {
           setBidHistory(
             apiAuction.bids.map((b: any, idx: number) => ({
@@ -443,28 +384,23 @@ console.log("Auction status:", stat);
             }))
           );
           
-          // Set bid data for display
           if (auctionResult.data.highest_bid) {
             setBidData({
               highest_bid: {
                 amount: Number(auctionResult.data.highest_bid),
-                identity: auctionResult.data.highest_bidder?.name || 'None'
+                identity: bidData.highest_bid?.identity || 'None'
               },
-              highest_bidder: auctionResult.data.highest_bidder || { id: 'Unknown' },
-              total_bids: apiAuction.bids.length,
-              total_active_bidders: auctionResult.data.total_active_bidders || apiAuction.bids.length
+              total_bids: apiAuction.bids?.length || 0,
+              total_active_bidders: bidData.total_active_bidders || 0
             });
           }
         }
       }
 
-      // Fetch bids separately
-      const bidsResult = await auctionAPI.fetchBidsByAuctionId(id, token);
+      const bidsResult = await auctionAPI.fetchBidsByAuctionId(Number(id), token);
       if (bidsResult && bidsResult.data) {
         setBidData(bidsResult.data || {});
       }
-
-      console.log("Auction and bids refreshed");
     } catch (error) {
       console.error("Error refreshing auction data:", error);
     }
@@ -499,7 +435,6 @@ console.log("Auction status:", stat);
     setBidLoading(true);
 
     try {
-      // Correct: send auction.id and bidAmount as separate arguments!
       const response = await auctionAPI.placeBid(
         auction.id,
         bid_amount,
@@ -512,10 +447,8 @@ console.log("Auction status:", stat);
           description: `Your bid of $${bid_amount.toLocaleString()} has been placed.`,
         });
 
-        // Refresh auction and bid data
         await refreshAuctionAndBids();
 
-        // Import and emit bid event
         const { emitAuctionEvent, AUCTION_EVENTS } = await import("@/lib/utils");
         emitAuctionEvent(AUCTION_EVENTS.BID_PLACED, { 
           auction_id: auction.id,
@@ -554,7 +487,6 @@ console.log("Auction status:", stat);
     }
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setAutoBidEnabled(true);
@@ -590,88 +522,90 @@ console.log("Auction status:", stat);
     });
   };
 
+  useEffect(() => {
+    const getBids = async () => {
+      const token = getCookie('token');
+      if (!token || !id) return;
 
+      try {
+        const result = await auctionAPI.fetchBidsByAuctionId(Number(id), token);
+        setBidData(result.data || {});
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      }
+    };
 
-useEffect(() => {
-  const getBids = async () => {
-    const token = getCookie('token');
-    if (!token || !id) return;
-
-    try {
-      const result = await auctionAPI.fetchBidsByAuctionId(id, token); // pass token
-      console.log("Fetched bids:", result);
-      setBidData(result.data || {});
-    } catch (error) {
-      console.error("Error fetching bids:", error);
-    }
-  };
-
-  getBids();
-  
-  // Set up event listeners for bid updates
-  let handleBidPlaced: ((event: Event) => void) | null = null;
-  let cleanupEventListeners: (() => void) | null = null;
-  
-  // Import auction events
-  import("@/lib/utils").then(({ AUCTION_EVENTS }) => {
-    // Listen for bid events
-    handleBidPlaced = (event: any) => {
-      const customEvent = event as CustomEvent;
-      const eventData = customEvent.detail;
+    getBids();
+    
+    let handleBidPlaced: ((event: Event) => void) | null = null;
+    let cleanupEventListeners: (() => void) | null = null;
+    
+    import("@/lib/utils").then(({ AUCTION_EVENTS }) => {
+      handleBidPlaced = (event: any) => {
+        const customEvent = event as CustomEvent;
+        const eventData = customEvent.detail;
+        
+        if (eventData && eventData.auction_id === Number(id)) {
+          refreshAuctionAndBids();
+        }
+      };
       
-      // Only refresh if the bid is for this auction
-      if (eventData && eventData.auction_id === Number(id)) {
-        console.log("Bid placed event received, refreshing auction data...");
-        refreshAuctionAndBids();
+      window.addEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
+      
+      cleanupEventListeners = () => {
+        if (handleBidPlaced) {
+          window.removeEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
+        }
+      };
+    });
+    
+    const intervalId = setInterval(() => {
+      refreshAuctionAndBids();
+    }, 15000);
+    
+    return () => {
+      clearInterval(intervalId);
+      if (cleanupEventListeners) {
+        cleanupEventListeners();
       }
     };
-    
-    // Add event listeners
-    window.addEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
-    
-    // Store cleanup function
-    cleanupEventListeners = () => {
-      if (handleBidPlaced) {
-        window.removeEventListener(AUCTION_EVENTS.BID_PLACED, handleBidPlaced);
-      }
-    };
-  });
-  
-  // Set up polling interval as a fallback (every 15 seconds)
-  const intervalId = setInterval(() => {
-    console.log("Auto-refreshing auction data...");
-    refreshAuctionAndBids();
-  }, 15000); // 15 seconds
-  
-  // Clean up interval and event listeners on component unmount
-  return () => {
-    clearInterval(intervalId);
-    if (cleanupEventListeners) {
-      cleanupEventListeners();
-    }
-  };
-}, [id, toast]);
+  }, [id]);
 
-console.log("Bid Data:", bidData);
-console.log("Auction media:", auction);
-// console.log("First media URL:", auction.media?.[0]?.media_url);
-
-useEffect(() => {
-  const getAuctionDetails = async () => {
+  const handleWatchlist = async () => {
     const token = getCookie('token');
     if (!token || !id) return;
 
     try {
-      const result = await auctionAPI.fetchAuctionById(id, token); // pass token
-      console.log("Fetched auction details:", result);
+      // Note: watchlist functionality would need to be implemented in the API
+      toast({
+        title: "Added to Watchlist", 
+        description: "You will receive updates about this auction.",
+      });
     } catch (error) {
-      console.error("Error fetching auction details:", error);
+      console.error("Error adding to watchlist:", error);
     }
   };
 
-  getAuctionDetails();
-}, [id, toast]);
+  const handleShare = async () => {
+    try {
+      const url = `${window.location.origin}/auction/${Number(id)}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link Copied!",
+        description: "Auction link has been copied to clipboard.",
+      });
+    } catch (error) {
+      console.error("Error copying link:", error);
+    }
+  };
 
+  // Check if bidding should be disabled based on auction start time
+  const isBiddingDisabled = () => {
+    if (!auction) return true;
+    const now = new Date();
+    const startTime = new Date(auction.auction_start_time);
+    return now < startTime;
+  };
 
   if (loading) {
     return (
@@ -703,7 +637,6 @@ useEffect(() => {
   const minNextBid = currentBid + auction.bid_increment;
   const auctionStatus = auction.status || getAuctionStatus(auction);
   
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       {/* Header */}
@@ -716,7 +649,8 @@ useEffect(() => {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Auctions
+              <span className="hidden sm:inline">Back to Auctions</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -724,31 +658,31 @@ useEffect(() => {
               variant="outline"
               size="sm"
               onClick={handleToggleWatch}
-              className="gap-2"
+              className="gap-2 px-2 sm:px-3"
             >
               <Heart className={`h-4 w-4 ${isWatching ? 'fill-current text-red-500' : ''}`} />
-              {isWatching ? 'Watching' : 'Watch'}
+              <span className="hidden sm:inline">{isWatching ? 'Watching' : 'Watch'}</span>
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 px-2 sm:px-3" onClick={handleShare}>
               <Share2 className="h-4 w-4" />
-              Share
+              <span className="hidden sm:inline">Share</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className=" mx-auto p-4 sm:p-6 space-y-6">
+      <div className="mx-auto p-4 sm:p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Auction Header */}
             <Card className="shadow-lg border-0">
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CardTitle className="text-3xl">{auction.title}</CardTitle>
-                      <Badge variant={getStatusVariant(auctionStatus) as any} className="text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                      <CardTitle className="text-xl sm:text-2xl lg:text-3xl">{auction.title}</CardTitle>
+                      <Badge variant={getStatusVariant(auctionStatus) as any} className="text-sm self-start">
                         {auctionStatus}
                       </Badge>
                     </div>
@@ -761,7 +695,7 @@ useEffect(() => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 pt-0">
                 {/* Product Image */}
                 {auction && (
                   <>
@@ -805,19 +739,19 @@ useEffect(() => {
             {/* Auction Details Tabs */}
             <Card className="shadow-lg border-0">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="border-b px-6 pt-2">
+                <TabsList className="border-b px-4 sm:px-6 pt-2 w-full justify-start">
                   <TabsTrigger value="details">Details</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="details" className="p-6">
-                    <p className="text-2xl font-semibold mb-4">Details</p>
+                <TabsContent value="details" className="p-4 sm:p-6">
+                  <p className="text-xl sm:text-2xl font-semibold mb-4">Details</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
                         <DollarSign className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Starting Bid</p>
-                          <p className="text-xl font-bold">${auction.starting_bid.toLocaleString()}</p>
+                          <p className="text-lg sm:text-xl font-bold">${auction.starting_bid.toLocaleString()}</p>
                         </div>
                       </div>
                       
@@ -825,7 +759,7 @@ useEffect(() => {
                         <TrendingUp className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Reserve Price</p>
-                          <p className="text-xl font-bold">${auction.reserve_price?.toLocaleString() || "Not Set"}</p>
+                          <p className="text-lg sm:text-xl font-bold">${auction.reserve_price?.toLocaleString() || "Not Set"}</p>
                         </div>
                       </div>
 
@@ -833,19 +767,17 @@ useEffect(() => {
                         <Plus className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Bid Increment</p>
-                          <p className="text-xl font-bold">${auction.bid_increment.toLocaleString()}</p>
+                          <p className="text-lg sm:text-xl font-bold">${auction.bid_increment.toLocaleString()}</p>
                         </div>
                       </div>
+                      
                       <div className="flex items-center gap-3">
-                        <Plus className="h-5 w-5 text-primary" />
+                        <User className="h-5 w-5 text-primary" />
                         <div className="flex gap-1 items-center">
-                          <p className="text-md font-bold">Bidder</p>{bidData.highest_bidder?.id || "Unknown"} -
-                          
-                          {/* <p className="text-sm font-medium text-muted-foreground mt-2">Highest Bid</p> */}
+                          <p className="text-md font-bold">Highest Bidder:</p>
                           <p className="text-lg font-bold">{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
                         </div>
                       </div>
-
                     </div>
 
                     <div className="space-y-4">
@@ -853,7 +785,7 @@ useEffect(() => {
                         <Clock className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                          <p className="font-medium">
+                          <p className="font-medium text-sm sm:text-base">
                             {new Date(auction.auction_start_time).toLocaleString()}
                           </p>
                         </div>
@@ -863,7 +795,7 @@ useEffect(() => {
                         <Timer className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">End Time</p>
-                          <p className="font-medium">
+                          <p className="font-medium text-sm sm:text-base">
                             {new Date(auction.auction_end_time).toLocaleString()}
                           </p>
                         </div>
@@ -878,13 +810,12 @@ useEffect(() => {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Eye className="h-5 w-5 text-primary" />
+                        <Users className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Total Active Bidders</p>
-                          <p className="font-medium">NO: {bidData.total_active_bidders || 0}</p>
+                          <p className="font-medium">{bidData.total_active_bidders || 0}</p>
                         </div>
                       </div>
-                     
                     </div>
                   </div>
                 </TabsContent>
@@ -892,21 +823,20 @@ useEffect(() => {
             </Card>
           </div>
           
-
           {/* Sidebar - Bidding Panel */}
           <div className="space-y-6">
             {/* Current Bid Status */}
             <Card className="shadow-lg border-0">
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-primary" />
                   Current Status
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Current Highest Bid</p>
-                  <p className="text-3xl font-bold text-primary">
+                  <p className="text-2xl sm:text-3xl font-bold text-primary">
                     ${bidData.highest_bid?.amount ? bidData.highest_bid.amount.toLocaleString() : currentBid.toLocaleString()}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -914,21 +844,17 @@ useEffect(() => {
                   </p>
                 </div>
                 
-               
-
-                      <Separator />
+                <Separator />
                 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Time Remaining</p>
                   <div className="space-y-2">
-    {/* <AuctionTimer auction={auction} /> */}
- <AuctionTimer auction={auction} />
-
-    </div>
+                    <AuctionTimer auction={auction} />
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Watchers</span>
+                  <span className="text-muted-foreground">Active Bidders</span>
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     <span className="font-medium">{bidData.total_active_bidders || 0}</span>
@@ -937,59 +863,36 @@ useEffect(() => {
               </CardContent>
             </Card>
 
-             <Separator />
-
-                
-                      {/* your currewnt bid  */}
-                      <Card>
-                           <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  Your Current Bid
-                </CardTitle>
-              </CardHeader>
-                        <CardContent className="space-y-4">
-                      <div className="flex items-center gap-3 justify-center ">
-                        {/* <Plus className="h-5 w-5 text-primary" /> */}
-                        <div >
-                          <p className="text-sm font-medium text-muted-foreground text-center">Your Current Bid</p>
-                          <div className="flex gap-3 mt-1">
-                            {/* <p className="text-lg font-bold">{bidData.highest_bid?.identity || "Unknown"}</p> - */}
-                           <p className="text-center mt-3">{bidData.highest_bid?.amount ? `$${bidData.highest_bid.amount.toLocaleString()}` : "No Bids"}</p>
-                          </div>
-                        </div>
-                      </div>
-                      </CardContent>
-                      </Card>
-
-                       {(stat === 'active' || stat === 'ending_soon') && (
+            {/* Bidding Panel */}
+            {(stat === 'active' || stat === 'ending_soon') && (
               <Card className="shadow-lg border-0">
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-6">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Gavel className="h-5 w-5 text-primary" />
                     Place Your Bid
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                   <div className="space-y-2">
                     <Label htmlFor="bidAmount">Bid Amount</Label>
                     <div className="flex gap-2">
-              <input
-  type="number"
-  min={auction.current_bid || auction.starting_bid}
-  value={bid_amount}
-  onChange={(e) => setAmount(prevAmount => Number(e.target.value))}
-  className="border rounded px-3 py-2 w-full text-black"
-  placeholder="Enter your bid amount"
-/>
-
+                      <input
+                        type="number"
+                        min={auction.current_bid || auction.starting_bid}
+                        value={bid_amount}
+                        onChange={(e) => setAmount(Number(e.target.value))}
+                        className="border rounded px-3 py-2 w-full text-black"
+                        placeholder="Enter your bid amount"
+                        disabled={isBiddingDisabled()}
+                      />
                       <Button
                         variant="outline"
                         onClick={handleIncrementBid}
-                        className="gap-1"
+                        className="gap-1 whitespace-nowrap"
+                        disabled={isBiddingDisabled()}
                       >
                         <Plus className="h-4 w-4" />
-                        ${auction.bid_increment}
+                        <span className="hidden sm:inline">${auction.bid_increment}</span>
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -999,11 +902,16 @@ useEffect(() => {
 
                   <Button 
                     onClick={handlePlaceBid}
-                    disabled={bidLoading || bid_amount < minNextBid}
+                    disabled={bidLoading || bid_amount < minNextBid || isBiddingDisabled()}
                     className="w-full"
                     size="lg"
                   >
-                    {bidLoading ? (
+                    {isBiddingDisabled() ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Bidding Starts Soon
+                      </>
+                    ) : bidLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Placing Bid...
@@ -1011,133 +919,61 @@ useEffect(() => {
                     ) : (
                       <>
                         <Gavel className="h-4 w-4 mr-2" />
-                        Place Bid ${bid_amount.toLocaleString()}
+                        <span className="hidden sm:inline">Place Bid ${bid_amount.toLocaleString()}</span>
+                        <span className="sm:hidden">${bid_amount.toLocaleString()}</span>
                       </>
                     )}
                   </Button>
 
-                  {/* Auto bid  */}
+                  {isBiddingDisabled() && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Bidding will be available when the auction starts
+                    </p>
+                  )}
+
                   <Button 
                     onClick={() => setShowAutoBidPanel((prev) => !prev)}
-                    
+                    variant="outline"
                     className="w-full"
                     size="lg"
+                    disabled={isBiddingDisabled()}
                   >
-                  <>
-                        <Gavel className="h-4 w-4 mr-2" />
-                      Auto Bid ${bid_amount.toLocaleString()}
-                      </>
+                    <Zap className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Auto Bid ${bid_amount.toLocaleString()}</span>
+                    <span className="sm:hidden">Auto Bid</span>
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-
-                      {/* Bid History */}
-                      <Card className="shadow-lg border-0">
-                        <CardHeader>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <History className="h-5 w-5 text-primary" />
-                            Bid History
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-4">
-                            {bidHistory.length > 0 ? (
-                              <div className="overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Bidder</TableHead>
-                                      <TableHead>Amount</TableHead>
-                                      <TableHead>Time</TableHead>
-                                      <TableHead>Type</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {bidHistory.map((bid) => (
-                                      <TableRow key={bid.id}>
-                                        <TableCell className="font-medium ">
-                                          Bidder 
-                                          <span>{bidData.highest_bidder?.id || "3"}</span></TableCell>
-                                        <TableCell className="font-bold text-primary">
-                                          ${bid.bid_amount.toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                          {new Date(bid.time).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
-                                            {bid.isAutoBid ? "Auto" : "Manual"}
-                                          </Badge>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            ) : (
-                              <div className="text-center py-4">
-                                <Gavel className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                                <h3 className="font-medium mb-1">No bids yet</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Be the first to place a bid on this auction
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-            {/* Bidding Panel */}
-{/* upcoming bid */}
-  {stat === 'upcoming' && (
-     <Card className="shadow-lg border-0">
-                <CardContent className="pt-6">
+            {/* Upcoming bid message */}
+            {stat === 'upcoming' && (
+              <Card className="shadow-lg border-0">
+                <CardContent className="pt-6 p-4 sm:p-6">
                   <div className="text-center">
                     <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="font-medium mb-2">Auction {auctionStatus === 'ended' ? 'Ended' : 'Not Active'}</h3>
+                    <h3 className="font-medium mb-2">Auction Not Started</h3>
                     <p className="text-sm text-muted-foreground">
-                      {auctionStatus === 'ended' 
-                        ? 'This auction has not started yet. Please check back later.'
-                        : 'This auction has not started yet. Please check back later.'
-                      }
+                      This auction has not started yet. Please check back later.
                     </p>
                   </div>
                 </CardContent>
               </Card>
-    )}
-
-           
-      {/* <div className="mb-4">
-        
-  <input
-    type="checkbox"
-    id="autoBidToggle"
-    checked={showAutoBidPanel}
-    onChange={() => setShowAutoBidPanel((prev) => !prev)}
-    className="mr-2"
-  />
-  <label htmlFor="autoBidToggle" className="text-sm font-medium">
-    Enable Auto-Bid
-  </label>
-</div> */}
-
-
+            )}
 
             {/* Auto-Bid Panel */}
-            {showAutoBidPanel && (
+            {showAutoBidPanel && !isBiddingDisabled() && (
               <Card className="shadow-lg border-0">
-                <CardHeader>
+                <CardHeader className="p-4 sm:p-6">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Zap className="h-5 w-5 text-primary" />
                     Auto-Bid
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     Set a maximum bid and let the system bid for you automatically
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                   {autoBidEnabled ? (
                     <div className="text-center p-4 bg-primary/10 rounded-lg">
                       <Zap className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -1157,37 +993,6 @@ useEffect(() => {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="maxAutoBid">Maximum Auto-Bid Amount</Label>
-                        <Input
-                          id="maxAutoBid"
-                          type="number"
-                          value={maxAutoBid}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={currentBid + auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="Enter maximum bid_amount"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The system will automatically bid up to this bid_amount
-                        </p>
-                      </div>
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="maxAutoBid">Maximum Auto-Bid Amount</Label>
-                        <Input
-                          id="maxAutoBid"
-                          type="number"
-                          value={maxAutoBid}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={currentBid + auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="Enter maximum bid_amount"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The system will automatically bid up to this bid_amount
-                        </p>
-                      </div> */}
-
-                      <div className="space-y-2">
                         <Label htmlFor="maxAutoBid" className="text-sm font-medium">
                           Max Bid Limit
                         </Label>
@@ -1202,27 +1007,7 @@ useEffect(() => {
                           className="text-lg"
                         />
                         <p className="text-xs text-muted-foreground">
-                          The total bid_amount you're willing to spend on this auction.
-                        </p>
-                      </div>
-
-                      {/* Bid Step Amount */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bidStepAmount" className="text-sm font-medium">
-                          Bid Step Amount
-                        </Label>
-                        <Input
-                          id="bidStepAmount"
-                          type="number"
-                          value={'bidStepAmount' in window ? bidStepAmount : auction.bid_increment}
-                          onChange={(e) => setMaxAutoBid(Number(e.target.value))}
-                          min={auction.bid_increment}
-                          step={auction.bid_increment}
-                          placeholder="e.g. 500"
-                          className="text-lg"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          The bid_amount the system will automatically bid on your behalf when you're outbid.
+                          The total amount you're willing to spend on this auction.
                         </p>
                       </div>
 
@@ -1241,30 +1026,78 @@ useEffect(() => {
               </Card>
             )}
 
-  
-
             {/* Auction Ended */}
             {stat === 'ended' && (
               <Card className="shadow-lg border-0">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 p-4 sm:p-6">
                   <div className="text-center">
                     <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="font-medium mb-2">Auction {auctionStatus === 'ended' ? 'Ended' : 'Not Active'}</h3>
+                    <h3 className="font-medium mb-2">Auction Ended</h3>
                     <p className="text-sm text-muted-foreground">
-                      {auctionStatus === 'ended' 
-                        ? 'This auction has ended. No more bids can be placed.'
-                        : 'This auction has ended. No more bids can be placed.'
-                      }
+                      This auction has ended. No more bids can be placed.
                     </p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            
+            {/* Bid History */}
+            <Card className="shadow-lg border-0">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5 text-primary" />
+                  Bid History
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+                <div className="space-y-4">
+                  {bidHistory.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs sm:text-sm">Bidder</TableHead>
+                            <TableHead className="text-xs sm:text-sm">Amount</TableHead>
+                            <TableHead className="hidden sm:table-cell text-xs sm:text-sm">Time</TableHead>
+                            <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bidHistory.map((bid) => (
+                            <TableRow key={bid.id}>
+                              <TableCell className="font-medium text-xs sm:text-sm">
+                                Bidder {bid.id}
+                              </TableCell>
+                              <TableCell className="font-bold text-primary text-xs sm:text-sm">
+                                ${bid.bid_amount.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-xs hidden sm:table-cell">
+                                {new Date(bid.time).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={bid.isAutoBid ? "secondary" : "outline"} className="text-xs">
+                                  {bid.isAutoBid ? "Auto" : "Manual"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Gavel className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <h3 className="font-medium mb-1">No bids yet</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Be the first to place a bid on this auction
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-        
       </div>
     </div>
   );
